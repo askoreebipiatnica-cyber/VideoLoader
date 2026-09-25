@@ -61,7 +61,8 @@ function videoState() {
 }
 
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
-  if (!msg || msg.type !== "GET_INLINE_CANDIDATES") return false;
+  // [SEC-FIX SEC-03] Принимаем только известную команду со строковым типом.
+  if (!msg || typeof msg.type !== "string" || msg.type !== "GET_INLINE_CANDIDATES") return false;
   sendResponse({ cands: scrapeInline() });
   return false;
 });

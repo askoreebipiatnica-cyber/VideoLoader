@@ -221,5 +221,21 @@ function eq(name, got, want) {
   eq("chain ig-api url", calls.length === 1 && calls[0].url, "https://cdn.test/full.mp4");
 }
 
+// Сценарий 11: data:-URL из страницы отклоняется, закачек нет
+{
+  const { ctx, calls, send } = makeCtx({ text: () => "" });
+  const r = await send({ type: "DOWNLOAD", url: "data:text/html,<script>alert(1)</script>", title: "x" });
+  eq("chain data-url blocked", r.ok, false);
+  eq("chain data-url no downloads", calls.length, 0);
+}
+
+// Сценарий 12: javascript:-ссылка во вставке отклоняется
+{
+  const { ctx, calls } = makeCtx({ text: () => "" });
+  const r = await vm.runInContext(`resolveDownload("javascript:alert(1)", 1, null)`, ctx);
+  eq("chain js-url blocked", r.ok, false);
+  eq("chain js-url no downloads", calls.length, 0);
+}
+
 console.log(`\nCHAIN pass=${pass} fail=${fail}`);
 process.exit(fail ? 1 : 0);

@@ -3,9 +3,20 @@
 (function (root) {
   const api = {};
 
+  /** Allowlist схемы для любых сетевых действий и закачек: только http(s).
+   *  [SEC-FIX SEC-02] Блокирует javascript:/data:/file:/blob: из DOM страницы. */
+  api.isSafeHttpUrl = function (u) {
+    if (typeof u !== "string") return false;
+    const s = u.trim();
+    if (s.length < 8 || s.length > 2048) return false;
+    try {
+      const p = new URL(s);
+      return p.protocol === "http:" || p.protocol === "https:";
+    } catch { return false; }
+  };
+
   /** Нормализация вставленной ссылки. */
-  api.normalizeInput = function (raw) {
-    let s = String(raw || "").trim();
+  api.normalizeInput = function (raw) {    let s = String(raw || "").trim();
     if (!s) return null;
     if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(s)) s = "https://" + s;
     try {

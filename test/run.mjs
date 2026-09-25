@@ -138,6 +138,18 @@ eq("hist oldest dropped", h1.some((x) => x.downloadId === 1 || x.downloadId === 
 eq("hist dedupe", P.pushHistory(h1, { filename: "dup", downloadId: 9 }).filter((x) => x.downloadId === 9).length, 1);
 eq("hist bad input", P.pushHistory(null, { filename: "a", downloadId: 1 }).length, 1);
 
+// isSafeHttpUrl: allowlist схем
+eq("safe http", P.isSafeHttpUrl("http://cdn.test/v.mp4"), true);
+eq("safe https", P.isSafeHttpUrl("https://cdn.test/v.mp4?x=1"), true);
+eq("safe js no", P.isSafeHttpUrl("javascript:alert(1)"), false);
+eq("safe data no", P.isSafeHttpUrl("data:text/html,hi"), false);
+eq("safe file no", P.isSafeHttpUrl("file:///C:/v.mp4"), false);
+eq("safe blob no", P.isSafeHttpUrl("blob:https://x/1"), false);
+eq("safe ftp no", P.isSafeHttpUrl("ftp://x/f"), false);
+eq("safe nonstring", P.isSafeHttpUrl({}), false);
+eq("safe empty", P.isSafeHttpUrl(""), false);
+eq("safe long", P.isSafeHttpUrl("https://x.com/" + "a".repeat(2048)), false);
+
 // manifest валиден
 const mf = JSON.parse(readFileSync(new URL("../manifest.json", import.meta.url), "utf8"));
 eq("manifest v3", mf.manifest_version, 3);

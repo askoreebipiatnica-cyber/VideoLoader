@@ -52,10 +52,12 @@ function fmtTime(at) {
 }
 
 function renderHist(items) {
-  histEl.innerHTML = "";
-  if (!items || !items.length) { histCard.style.display = "none"; return; }
+  // [SEC-FIX SEC-04] replaceChildren вместо innerHTML: ноль HTML-парсинга даже статикой.
+  histEl.replaceChildren();
+  if (!Array.isArray(items) || !items.length) { histCard.style.display = "none"; return; }
   histCard.style.display = "";
   for (const it of items) {
+    if (!it || typeof it !== "object") continue; // [SEC-FIX SEC-03] пропускаем мусор из хранилища
     const li = document.createElement("li");
     li.className = "item";
     const dot = document.createElement("span");

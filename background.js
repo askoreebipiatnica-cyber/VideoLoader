@@ -9,6 +9,9 @@ const MAX_PER_TAB = 30;
 
 function remember(tabId, item) {
   if (tabId == null || tabId < 0) return;
+  // [SEC-FIX SEC-02] Отсев на входе: только строки http(s), иначе чужеродный URL из страницы
+  // никогда не попадёт в detected/авто/журнал.
+  if (!item || typeof item.url !== "string" || !P.isSafeHttpUrl(item.url)) return;
   const list = detected.get(tabId) || [];
   if (list.some((x) => x.url === item.url)) return;
   list.unshift({ ...item, at: Date.now() });
@@ -132,13 +135,18 @@ function stamp() {
 }
 
 async function doDownload(url, title, extHint) {
+  // [SEC-FIX SEC-02] Финальный шлюз: качаем только http(s). Всё остальное (data:, blob:, javascript:)
+  // из DOM страницы или сообщений сюда дойти не должно.
+  if (!P.isSafeHttpUrl(url)) throw new Error("bad url scheme");
+  // [SEC-FIX SEC-03] title обязан быть строкой, иначе safeFilename получит мусор.
+  const safeTitle = typeof title === "string" ? title : "";
   let host = "video";
   try { host = new URL(url).hostname.replace(/^www\./, "").split(".")[0] || host; } catch { /* keep */ }
   // Человеческое имя: заголовок страницы, иначе host+дата. Хэш из CDN-ссылки не тащим.
   const defExt = extHint || ".mp4";
   let filename;
-  if (title && title.length > 2 && title.length < 80) {
-    filename = P.safeFilename(title, defExt);
+  if (safeTitle && safeTitle.length > 2 && safeTitle.length < 80) {
+    filename = P.safeFilename(safeTitle, defExt);
   } else {
     filename = P.safeFilename(`${host}-${stamp()}`, defExt);
   }
@@ -267,8 +275,12 @@ async function cancelActive() {
   return { ok: true };
 }
 
-/** Проверка начала файла: цельное видео или фрагмент/инит. */
+/** Проверка начала файла: цельное видео или фрагмент/инит.
+ *  [SEC-FIX SEC-09] Читаем только первые 64 КБ через reader + cancel: сервер, игнорирующий
+ *  Range и отдающий тело целиком, иначе положил бы service worker в OOM. */
 async function probeOne(url, signal) {
+  // [SEC-FIX SEC-02] Не ходим fetch за пределы http(s).
+  if (!P.isSafeHttpUrl(url)) return "unknown";
   try {
     const r = await fetchWithTimeout(url, { headers: { Range: "bytes=0-65535" }, credentials: "include" }, 10000, signal);
     if (!r.ok && r.status !== 206) return "unknown";
@@ -277,7 +289,31 @@ async function probeOne(url, signal) {
     const cr = String(r.headers.get("content-range") || "");
     const m = cr.match(/\/(\d+)\s*$/);
     if (m) total = parseInt(m[1], 10) || 0;
-    const buf = new Uint8Array(await r.arrayBuffer()).slice(0, 65536);
+    let buf;
+    if (r.body && typeof r.body.getReader === "function") {
+      const reader = r.body.getReader();
+      try {
+        const chunks = [];
+        let len = 0;
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (value && value.length && len < 65536) { chunks.push(value); len += value.length; }
+          if (done || len >= 65536) break;
+        }
+        buf = new Uint8Array(Math.min(len, 65536));
+        let off = 0;
+        for (const c of chunks) {
+          const n = Math.min(c.length, 65536 - off);
+          buf.set(c.subarray ? c.subarray(0, n) : c.slice(0, n), off);
+          off += n;
+          if (off >= 65536) break;
+        }
+      } finally {
+        try { await reader.cancel(); } catch { /* ignore */ }
+      }
+    } else {
+      buf = new Uint8Array(await r.arrayBuffer()).slice(0, 65536);
+    }
     if (!buf.length) return "unknown";
     if (/webm|matroska/.test(ct)) return P.hasEbmlHead(buf) ? "playable" : "fragment";
     if (/video\//.test(ct) || !ct || /mp4|quicktime|octet-stream/.test(ct)) {
@@ -319,7 +355,9 @@ async function askTab(tabId, signal) {
   if (tabId == null || tabId < 0) return [];
   const collect = async () => {
     const r = await chrome.tabs.sendMessage(tabId, { type: "GET_INLINE_CANDIDATES" });
-    return (r && r.cands) || [];
+    // [SEC-FIX SEC-03] Принимаем только массив строк; схемы режет remember().
+    const c = (r && r.cands) || [];
+    return Array.isArray(c) ? c.filter((u) => typeof u === "string").slice(0, 30) : [];
   };
   let cands;
   try {
@@ -589,25 +627,45 @@ async function resolveDownload(raw, tabId, signal) {
   return sawFragment ? noFile() : { ok: false, needPlayback: true };
 }
 
+/** [SEC-FIX SEC-01/SEC-03] Строгая валидация входящих сообщений:
+ *  чужое расширение (sender.id) отрезаем сразу, поля проверяем по типам. */
+function validTabId(v, sender) {
+  if (typeof v === "number" && Number.isInteger(v) && v >= 0) return v;
+  const t = sender && sender.tab && sender.tab.id;
+  return typeof t === "number" ? t : null;
+}
+function validStr(v, max) {
+  if (typeof v !== "string") return "";
+  return v.length > max ? v.slice(0, max) : v;
+}
+
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   (async () => {
-    if (!msg || !msg.type) return sendResponse(null);
+    // [SEC-FIX SEC-01] Сообщения принимаем только из своих контекстов.
+    if (sender && sender.id && sender.id !== chrome.runtime.id) return;
+    if (!msg || typeof msg.type !== "string") return sendResponse(null);
     if (msg.type === "GET_DETECTED") {
-      const tabId = msg.tabId != null ? msg.tabId : (sender.tab && sender.tab.id);
-      sendResponse(detected.get(tabId) || []);
+      const tabId = validTabId(msg.tabId, sender);
+      sendResponse(tabId == null ? [] : detected.get(tabId) || []);
     } else if (msg.type === "ADD_PAGE_VIDEOS") {
-      for (const v of msg.items || []) {
-        if (!v || !v.url || /^blob:/i.test(v.url)) continue;
+      // [SEC-FIX SEC-03] Элементы из DOM страницы: строгие типы, URL только http(s), длины режем.
+      const items = Array.isArray(msg.items) ? msg.items : [];
+      const tabId = validTabId(msg.tabId, sender);
+      const title = validStr(msg.pageTitle, 200);
+      for (const v of items) {
+        if (!v || typeof v.url !== "string" || !P.isSafeHttpUrl(v.url)) continue;
         const pl = P.isPlaylist(v.url, "");
-        remember(msg.tabId, {
+        remember(tabId, {
           url: v.url, kind: pl ? "hls" : "page",
           label: pl ? "HLS" : "PAGE",
-          title: v.title || msg.pageTitle || "", size: "",
+          title: typeof v.title === "string" ? v.title.slice(0, 200) : title, size: "",
         });
       }
       sendResponse({ ok: true });
     } else if (msg.type === "DOWNLOAD") {
       try {
+        // [SEC-FIX SEC-02/SEC-03] doDownload сам отклонит не-http(s); title режем.
+        if (typeof msg.url !== "string") throw new Error("bad url");
         const probe = await probeOne(msg.url, null);
         if (probe === "fragment") {
           sendResponse({ ok: false, nofile: true, error: NOFILE_MSG });
@@ -615,31 +673,41 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       }
       catch (e) { sendResponse({ ok: false, error: String((e && e.message) || e) }); }
     } else if (msg.type === "RESOLVE_DOWNLOAD") {
-      try { sendResponse(await runOp("fetch", "Разбираю ссылку", (sig) => resolveDownload(msg.url, msg.tabId, sig))); }
+      try {
+        // [SEC-FIX SEC-03] url обязан быть строкой; tabId валидируем внутри resolveDownload через askTab.
+        if (typeof msg.url !== "string") throw new Error("bad url");
+        const tabId = validTabId(msg.tabId, sender);
+        sendResponse(await runOp("fetch", "Разбираю ссылку", (sig) => resolveDownload(msg.url, tabId, sig)));
+      }
       catch (e) { sendResponse({ ok: false, error: String((e && e.message) || e) }); }
     } else if (msg.type === "CANCEL") {
       try { sendResponse(await cancelActive()); }
       catch (e) { sendResponse({ ok: false, error: String((e && e.message) || e) }); }
     } else if (msg.type === "VIDEO_PLAYING") {
       try {
-        const tabId = msg.tabId != null ? msg.tabId : (sender.tab && sender.tab.id);
+        const tabId = validTabId(msg.tabId, sender);
+        const title = validStr(msg.pageTitle, 200);
+        // [SEC-FIX SEC-03] Кандидаты из страницы: только массив строк; remember() дополнительно режет схемы.
+        const cands = Array.isArray(msg.cands) ? msg.cands.filter((u) => typeof u === "string").slice(0, 20) : [];
         if (tabId != null) {
-          if (msg.pageTitle) {
+          if (title) {
             const list = detected.get(tabId) || [];
-            list.forEach((x) => { if (!x.title) x.title = msg.pageTitle; });
+            list.forEach((x) => { if (!x.title) x.title = title; });
             detected.set(tabId, list);
           }
-          for (const u of (msg.cands || []).slice(0, 20)) {
-            if (!u || /^blob:/i.test(u)) continue;
+          for (const u of cands) {
+            if (!P.isSafeHttpUrl(u)) continue;
             const pl = P.isPlaylist(u, "");
             remember(tabId, {
               url: u, kind: pl ? "hls" : "page",
               label: pl ? "HLS" : "PAGE",
-              title: msg.pageTitle || "", size: "", bytes: 0,
+              title, size: "", bytes: 0,
             });
           }
           const prev = autoState.get(tabId) || {};
-          autoState.set(tabId, { ...prev, duration: msg.duration || 0 });
+          // [SEC-FIX SEC-03] duration обязан быть конечным числом, иначе игнор.
+          const dur = Number(msg.duration);
+          autoState.set(tabId, { ...prev, duration: Number.isFinite(dur) ? dur : 0 });
         }
         if (await autoPref()) await autoCapture(tabId);
         sendResponse({ ok: true });
@@ -665,12 +733,16 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       });
     } else if (msg.type === "SHOW") {
       try {
+        // [SEC-FIX SEC-03] id обязан быть числом.
+        if (typeof msg.id !== "number" || !Number.isInteger(msg.id)) throw new Error("bad id");
         await chrome.downloads.show(msg.id);
         sendResponse({ ok: true });
       } catch (e) { sendResponse({ ok: false, error: String((e && e.message) || e) }); }
     } else if (msg.type === "DEL_FILE") {
       // Удаление файла с диска + из журнала
       try {
+        // [SEC-FIX SEC-03] id обязан быть числом.
+        if (typeof msg.id !== "number" || !Number.isInteger(msg.id)) throw new Error("bad id");
         try { await chrome.downloads.removeFile(msg.id); } catch { /* файла уже нет */ }
         try { await chrome.downloads.erase({ id: msg.id }); } catch { /* ignore */ }
         const list = await getHist();

@@ -1,8 +1,10 @@
-# VideoLoader — качай видео одной кнопкой
+# VideoLoader — расширение для браузера: качай видео одной кнопкой
 
-**🇷🇺 [Русский](#videoloader--качай-видео-одной-кнопкой) · 🇬🇧 [English](#videoloader--one-click-video-downloader)**
+**🇷🇺 [Русский](#videoloader--расширение-для-браузера-качай-видео-одной-кнопкой) · 🇬🇧 [English](#videoloader--browser-extension-one-click-video-downloader)**
 
-Бесплатное расширение для Chrome / Vivaldi / Edge / Brave / Opera / Яндекс Браузера. Без регистрации, без водяных знаков, с открытым кодом.
+> 🧩 **Это расширение для браузера** (Chrome / Edge / Firefox / Opera / Яндекс / Brave / Vivaldi), а не отдельная программа: ставится за минуту, ничего не пишет в систему.
+
+Бесплатное расширение с открытым кодом. Без регистрации, без водяных знаков.
 
 ![Демо: скачивание рилса за 4 шага](docs/demo.gif)
 
@@ -64,9 +66,11 @@ node test/i18n.mjs   # 23 locale completeness tests
 
 ---
 
-# VideoLoader — one-click video downloader
+# VideoLoader — browser extension: one-click video downloader
 
-Free extension for Chrome / Vivaldi / Edge / Brave / Opera / Yandex Browser. No sign-up, no watermarks, open source.
+> 🧩 **This is a browser extension** (Chrome / Edge / Firefox / Opera / Yandex / Brave / Vivaldi), not a standalone program: installs in a minute, writes nothing to the system.
+
+Free open-source extension. No sign-up, no watermarks.
 
 ![Demo: downloading a reel in 4 steps](docs/demo.gif)
 

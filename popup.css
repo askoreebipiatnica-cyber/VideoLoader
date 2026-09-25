@@ -72,6 +72,7 @@ body {
 .dot.close { background: #ff5f57; } .dot.min { background: #febc2e; } .dot.max { background: #28c840; }
 .title { flex: 1; text-align: center; font-size: 13px; font-weight: 700; margin: 0; }
 .theme-seg { display: flex; background: var(--field); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.lang-sel { background: var(--field); color: var(--ink-2); border: 1px solid var(--line); border-radius: 10px; font-size: 11px; padding: 4px 2px; outline: none; cursor: pointer; }
 .theme-seg button { border: 0; background: transparent; color: var(--ink-2); font-size: 12px; padding: 4px 8px; cursor: pointer; }
 .theme-seg button.on { background: var(--accent); color: #fff; }
 .card {

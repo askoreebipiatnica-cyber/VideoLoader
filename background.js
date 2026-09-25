@@ -1,5 +1,7 @@
 "use strict";
 /* Service worker: перехват медиапотоков + скачивание по ссылке. */
+// [COMPAT] Firefox MV3 понимает chrome.*; запасной вариант — browser.*.
+var chrome = globalThis.chrome || globalThis.browser;
 importScripts("parser.js");
 const P = globalThis.VideoLoaderParser;
 
@@ -172,8 +174,6 @@ async function headContentType(url, signal) {
   }
 }
 
-const NOFILE_MSG = "Цельный файл не найден — сайт отдаёт только поток. Попробуй другой пост или обнови страницу.";
-
 /** fetch с таймаутом: зависшие запросы (Instagram любит молчать) не вешают кнопку.
  *  extSignal — внешняя отмена (кнопка СТОП / новая операция). */
 async function fetchWithTimeout(url, opts, ms, extSignal) {
@@ -345,7 +345,7 @@ async function tryCaught(tabId, signal) {
     const dl = await doDownload(c.url, c.title || "", probe === "playable" ? undefined : P.extByContentType(""));
     return { ...dl, note: "caught" };
   }
-  if (sawFragment) return { ok: false, nofile: true, error: NOFILE_MSG };
+  if (sawFragment) return { ok: false, code: "NOFILE" };
   return null;
 }
 
@@ -491,8 +491,9 @@ async function igApiDownload(shortcode, pageUrl, signal) {
 async function resolveDownload(raw, tabId, signal) {
   const stage = (s) => { if (active) active.label = s; };
   const url = P.normalizeInput(raw);
-  if (!url) return { ok: false, error: "Похоже, это не ссылка." };
-  if (P.isPlaylist(url, "")) return { ok: false, error: "Это HLS/DASH плейлист, а не файл." };
+  // [i18n] Тексты ошибок живут в _locales; фон отдаёт коды, popup переводит.
+  if (!url) return { ok: false, code: "BAD_URL" };
+  if (P.isPlaylist(url, "")) return { ok: false, code: "PLAYLIST" };
 
   // Сначала помощник (yt-dlp локально): умеет то же, что сайты-качалки
   let helperError = "";
@@ -506,19 +507,19 @@ async function resolveDownload(raw, tabId, signal) {
       // помощник не справился — идём по встроенной цепочке
     }
   }
-  const helperFail = () => ({ ok: false, error: "Помощник не смог: " + helperError });
+  const helperFail = () => ({ ok: false, code: "HELPER_FAIL", detail: helperError });
 
   stage("Открываю ссылку");
   const ct = await headContentType(url, signal);
   if (/^video\//i.test(ct) || (P.isDirectMedia(url) && !P.isPlaylist(url, ct))) {
     stage("Качаю");
     if ((await probeOne(url, signal)) === "fragment") {
-      return { ok: false, nofile: true, error: NOFILE_MSG };
+      return { ok: false, code: "NOFILE" };
     }
     const dl = await doDownload(url, "", P.extByContentType(ct));
     return { ...dl, note: "direct" };
   }
-  if (P.isPlaylist(url, ct)) return { ok: false, error: "Это поток HLS/DASH, а не файл." };
+  if (P.isPlaylist(url, ct)) return { ok: false, code: "PLAYLIST" };
 
   stage("Открываю страницу");
   let html = "";
@@ -541,7 +542,7 @@ async function resolveDownload(raw, tabId, signal) {
     }
     const caught = await tryCaught(tabId, signal);
     if (caught) return caught;
-    return { ok: false, error: "Сайт не отвечает (таймаут). Открой это видео в браузере и нажми Play, авто-сохранение заберёт файл." };
+    return { ok: false, code: "SITE_TIMEOUT" };
   }
 
   stage("Ищу video_url");
@@ -566,7 +567,7 @@ async function resolveDownload(raw, tabId, signal) {
     }
     sawFragment = true;
   }
-  const noFile = () => ({ ok: false, nofile: true, error: NOFILE_MSG });
+  const noFile = () => ({ ok: false, code: "NOFILE" });
   // Instagram API (info + GraphQL Polaris): цельные video_versions
   const sc = P.instagramShortcode(url);
   if (sc) {
@@ -668,7 +669,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         if (typeof msg.url !== "string") throw new Error("bad url");
         const probe = await probeOne(msg.url, null);
         if (probe === "fragment") {
-          sendResponse({ ok: false, nofile: true, error: NOFILE_MSG });
+          sendResponse({ ok: false, code: "NOFILE" });
         } else sendResponse(await doDownload(msg.url, msg.title || ""));
       }
       catch (e) { sendResponse({ ok: false, error: String((e && e.message) || e) }); }

@@ -133,7 +133,7 @@ function eq(name, got, want) {
 {
   const { ctx, calls } = makeCtx({ text: () => FRAG_ONLY_HTML });
   const r = await vm.runInContext(`resolveDownload("https://www.instagram.com/reel/ZZZ/", 1, null)`, ctx);
-  eq("chain frag-only nofile", { ok: r.ok, nofile: r.nofile }, { ok: false, nofile: true });
+  eq("chain frag-only nofile", { ok: r.ok, code: r.code }, { ok: false, code: "NOFILE" });
   eq("chain frag-only no downloads", calls.length, 0);
 }
 
@@ -160,7 +160,7 @@ function eq(name, got, want) {
 {
   const { ctx, calls } = makeCtx({ text: () => "" });
   const r = await vm.runInContext(`resolveDownload("https://cdn.test/init.mp4", 1, null)`, ctx);
-  eq("chain init nofile", { ok: r.ok, nofile: r.nofile }, { ok: false, nofile: true });
+  eq("chain init nofile", { ok: r.ok, code: r.code }, { ok: false, code: "NOFILE" });
   eq("chain init no downloads", calls.length, 0);
 }
 
@@ -193,7 +193,7 @@ function eq(name, got, want) {
   const { ctx, calls } = makeCtx({ text: () => "<html></html>", helper: "up-fail" });
   const r = await vm.runInContext(`resolveDownload("https://www.instagram.com/reel/ABC123/", 1, null)`, ctx);
   eq("chain helper-err surfaced", r.ok, false);
-  eq("chain helper-err text", String(r.error || "").includes("nope"), true);
+  eq("chain helper-err code", { code: r.code, detail: String(r.detail || "") }, { code: "HELPER_FAIL", detail: "nope" });
   eq("chain helper-err no downloads", calls.length, 0);
 }
 

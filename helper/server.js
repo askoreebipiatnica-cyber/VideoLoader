@@ -28,7 +28,16 @@ function extOriginOk(req) {
 }
 
 // [RABBIT] Файлы, которые сейчас раздаём в /file/: чистка их не трогает.
-const serving = new Set();
+// Счётчик, а не флаг: один файл могут читать два ответа одновременно.
+const serving = new Map(); // name -> активных раздач
+function servingAdd(name) {
+  serving.set(name, (serving.get(name) || 0) + 1);
+}
+function servingRelease(name) {
+  const n = (serving.get(name) || 1) - 1;
+  if (n <= 0) serving.delete(name);
+  else serving.set(name, n);
+}
 
 // Чистим файлы старше часа: на запросах + по расписанию (см. низ файла)
 function sweep() {
@@ -108,13 +117,20 @@ const server = http.createServer((req, res) => {
       "Content-Disposition": `attachment; filename="${name}"`,
     });
     // [RABBIT] Ошибка чтения без слушателя роняет процесс; файл в раздаче не чистим.
-    serving.add(name);
+    // release() идемпотентен: error и close могут прийти парой на один ответ.
+    servingAdd(name);
+    let released = false;
+    const release = () => {
+      if (released) return;
+      released = true;
+      servingRelease(name);
+    };
     const st = fs.createReadStream(fp);
     st.on("error", () => {
-      serving.delete(name);
+      release();
       try { if (!res.headersSent) res.writeHead(500); res.end(); } catch { /* ignore */ }
     });
-    res.on("close", () => serving.delete(name));
+    res.on("close", release);
     st.pipe(res);
     return;
   }

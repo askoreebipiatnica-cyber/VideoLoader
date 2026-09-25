@@ -52,3 +52,5 @@ node test/run.mjs    # 73 юнита парсера
 node test/chain.mjs  # 31 end-to-end цепочки
 ```
 Иконки: `scripts/make-icons.ps1`. Версия — в `manifest.json`, в окне отображается сама.
+
+<!-- rabbit demo -->

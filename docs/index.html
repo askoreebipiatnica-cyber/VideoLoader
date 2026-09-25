@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VideoLoader — качалка видео одной кнопкой</title>
+<meta name="description" content="VideoLoader — бесплатное расширение для скачивания видео. One-click video downloader.">
+<style>
+:root {
+  --bg: #101014; --card: rgba(255,255,255,.06); --line: rgba(255,255,255,.12);
+  --ink: #f5f5f7; --dim: #a1a1a6; --acc: #0a84ff; --grn: #30d158;
+  --font: -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: radial-gradient(1000px 500px at 50% -100px, #1c2a4a, var(--bg)); color: var(--ink); font-family: var(--font); }
+.wrap { max-width: 960px; margin: 0 auto; padding: 32px 20px 64px; }
+.top { display: flex; justify-content: flex-end; }
+.lang { display: flex; gap: 6px; }
+.lang button { background: var(--card); border: 1px solid var(--line); color: var(--dim); border-radius: 10px; padding: 6px 12px; cursor: pointer; font-size: 13px; }
+.lang button.on { background: var(--acc); color: #fff; border-color: transparent; }
+.hero { text-align: center; padding: 36px 0 8px; }
+.hero img { width: 96px; height: 96px; border-radius: 22px; box-shadow: 0 12px 40px rgba(10,132,255,.35); }
+.hero h1 { font-size: 40px; margin: 16px 0 8px; }
+.hero p { color: var(--dim); font-size: 18px; margin: 0 0 24px; }
+.btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.btn { display: inline-block; padding: 12px 26px; border-radius: 14px; font-size: 16px; font-weight: 700; text-decoration: none; color: #fff; background: var(--acc); }
+.btn.ghost { background: var(--card); border: 1px solid var(--line); color: var(--ink); }
+.btn.heart { background: #ff453a; }
+.demo { margin: 36px auto 0; max-width: 720px; border-radius: 20px; overflow: hidden; border: 1px solid var(--line); box-shadow: 0 20px 60px rgba(0,0,0,.5); }
+.demo img { display: block; width: 100%; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-top: 40px; }
+.feat { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 18px; backdrop-filter: blur(12px); }
+.feat .e { font-size: 26px; }
+.feat h3 { margin: 8px 0 6px; font-size: 16px; }
+.feat p { margin: 0; color: var(--dim); font-size: 14px; }
+h2.sec { margin: 48px 0 12px; font-size: 26px; text-align: center; }
+.steps { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 20px 24px; }
+.steps ol { margin: 0; padding-left: 22px; }
+.steps li { margin: 8px 0; }
+code { background: rgba(255,255,255,.08); border-radius: 6px; padding: 2px 7px; font-size: 14px; }
+pre { background: rgba(0,0,0,.4); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; overflow-x: auto; font-size: 14px; }
+.limits { color: var(--dim); font-size: 14px; }
+.limits li { margin: 6px 0; }
+footer { text-align: center; color: var(--dim); font-size: 13px; margin-top: 48px; }
+footer a { color: var(--acc); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="lang">
+      <button data-l="ru" class="on">RU</button>
+      <button data-l="en">EN</button>
+    </div>
+  </div>
+
+  <div class="hero">
+    <img src="../icons/icon128.png" alt="VideoLoader">
+    <h1>VideoLoader</h1>
+    <p data-i="tagline">Качай видео одной кнопкой. Бесплатно, без регистрации, с открытым кодом.</p>
+    <div class="btns">
+      <a class="btn" href="https://github.com/askoreebipiatnica-cyber/VideoLoader/releases" data-i="dl">Скачать</a>
+      <a class="btn ghost" href="https://github.com/askoreebipiatnica-cyber/VideoLoader" data-i="code">Исходники</a>
+      <a class="btn heart" href="https://pay.cloudtips.ru/p/ac545b44">♥</a>
+    </div>
+  </div>
+
+  <div class="demo"><img src="demo.gif" alt="Demo"></div>
+
+  <h2 class="sec" data-i="feat_h">Возможности</h2>
+  <div class="grid">
+    <div class="feat"><div class="e">🎯</div><h3 data-i="f1h">Одна строка</h3><p data-i="f1p">Вставь ссылку на видео, пост, рилс, TikTok или YouTube.</p></div>
+    <div class="feat"><div class="e">🌍</div><h3 data-i="f2h">6 языков</h3><p data-i="f2p">Русский, English, Deutsch, 中文, қазақша, 한국어.</p></div>
+    <div class="feat"><div class="e">🧠</div><h3 data-i="f3h">Сам ищет файл</h3><p data-i="f3p">Помощник, вкладка, страница, Instagram API. Мусор не сохраняет.</p></div>
+    <div class="feat"><div class="e">⚡</div><h3 data-i="f4h">Авто-сохранение</h3><p data-i="f4p">Смотришь видео — файл падает сам. Мелочь пропускается.</p></div>
+    <div class="feat"><div class="e">📜</div><h3 data-i="f5h">Журнал</h3><p data-i="f5p">Последние 7 файлов: показать, удалить, очистить.</p></div>
+    <div class="feat"><div class="e">🖥️</div><h3 data-i="f6h">Помощник</h3><p data-i="f6p">yt-dlp локально, с куками твоего Chrome. Как сайты-качалки, но у тебя.</p></div>
+  </div>
+
+  <h2 class="sec" data-i="inst_h">Установка за минуту</h2>
+  <div class="steps">
+    <ol>
+      <li data-i="s1">Скачай ZIP из Releases и распакуй.</li>
+      <li><span data-i="s2a">Открой</span> <code>chrome://extensions/</code> <span data-i="s2b">и включи «Режим разработчика».</span></li>
+      <li data-i="s3">«Загрузить распакованное расширение» → папка videoloader.</li>
+      <li data-i="s4">Закрепи иконку. Или через консоль:</li>
+    </ol>
+    <pre>git clone https://github.com/askoreebipiatnica-cyber/VideoLoader.git</pre>
+  </div>
+
+  <h2 class="sec" data-i="lim_h">Честные ограничения</h2>
+  <ul class="limits">
+    <li data-i="l1">Только цельные MP4/WEBM. Нет цельного файла — скажет, битый не подсунет.</li>
+    <li data-i="l2">HLS (.m3u8) / DASH (.mpd) — плейлисты, а не видео.</li>
+    <li data-i="l3">Топ-качество YouTube — только DASH, забирается цельное.</li>
+  </ul>
+
+  <footer>VideoLoader · MIT-style open source · <a href="https://pay.cloudtips.ru/p/ac545b44">♥ <span data-i="don">поддержать</span></a></footer>
+</div>
+
+<script>
+const T = {
+en: {
+  tagline: "One-click video downloads. Free, no sign-up, open source.",
+  dl: "Download", code: "Sources",
+  feat_h: "Features",
+  f1h: "One input", f1p: "Paste a video, post, reel, TikTok or YouTube link.",
+  f2h: "6 languages", f2p: "Russian, English, Deutsch, 中文, қазақша, 한국어.",
+  f3h: "Finds the file itself", f3p: "Helper, tab, page, Instagram API. Never saves junk.",
+  f4h: "Auto-save", f4p: "Watch a video — the file saves itself. Trivia skipped.",
+  f5h: "History", f5p: "Last 7 files: show, delete, clear.",
+  f6h: "Helper", f6p: "Local yt-dlp with your Chrome cookies. Like downloader sites, but yours.",
+  inst_h: "1-minute install",
+  s1: "Download the ZIP from Releases and unpack it.",
+  s2a: "Open", s2b: "and enable Developer mode.",
+  s3: "Load unpacked → the videoloader folder.",
+  s4: "Pin the icon. Or via console:",
+  lim_h: "Honest limits",
+  l1: "Whole MP4/WEBM only. No whole file — it says so, never a broken file.",
+  l2: "HLS (.m3u8) / DASH (.mpd) are playlists, not video.",
+  l3: "Top YouTube quality is DASH-only — grabs whatever is whole.",
+  don: "support"
+}};
+document.querySelectorAll(".lang button").forEach((b) => {
+  b.addEventListener("click", () => {
+    document.querySelectorAll(".lang button").forEach((x) => x.classList.toggle("on", x === b));
+    document.documentElement.lang = b.dataset.l;
+    if (b.dataset.l === "ru") { location.reload(); return; }
+    document.querySelectorAll("[data-i]").forEach((el) => {
+      const v = T.en[el.dataset.i];
+      if (v) el.textContent = v;
+    });
+  });
+});
+</script>
+</body>
+</html>

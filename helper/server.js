@@ -27,11 +27,24 @@ function extOriginOk(req) {
   return /^chrome-extension:\/\/[a-z]+$/i.test(o);
 }
 
-// Чистим файлы старше часа при каждом запросе
+// [RABBIT] Файлы, которые сейчас раздаём в /file/: чистка их не трогает.
+// Счётчик, а не флаг: один файл могут читать два ответа одновременно.
+const serving = new Map(); // name -> активных раздач
+function servingAdd(name) {
+  serving.set(name, (serving.get(name) || 0) + 1);
+}
+function servingRelease(name) {
+  const n = (serving.get(name) || 1) - 1;
+  if (n <= 0) serving.delete(name);
+  else serving.set(name, n);
+}
+
+// Чистим файлы старше часа: на запросах + по расписанию (см. низ файла)
 function sweep() {
   try {
     const now = Date.now();
     for (const f of fs.readdirSync(OUT)) {
+      if (serving.has(f)) continue; // [RABBIT] не удаляем то, что сейчас читается
       const p = path.join(OUT, f);
       try {
         if (now - fs.statSync(p).mtimeMs > 3600_000) fs.unlinkSync(p);
@@ -103,7 +116,22 @@ const server = http.createServer((req, res) => {
       "Content-Length": fs.statSync(fp).size,
       "Content-Disposition": `attachment; filename="${name}"`,
     });
-    fs.createReadStream(fp).pipe(res);
+    // [RABBIT] Ошибка чтения без слушателя роняет процесс; файл в раздаче не чистим.
+    // release() идемпотентен: error и close могут прийти парой на один ответ.
+    servingAdd(name);
+    let released = false;
+    const release = () => {
+      if (released) return;
+      released = true;
+      servingRelease(name);
+    };
+    const st = fs.createReadStream(fp);
+    st.on("error", () => {
+      release();
+      try { if (!res.headersSent) res.writeHead(500); res.end(); } catch { /* ignore */ }
+    });
+    res.on("close", release);
+    st.pipe(res);
     return;
   }
   if (req.method === "POST" && u.pathname === "/download") {
@@ -127,3 +155,8 @@ const server = http.createServer((req, res) => {
 server.listen(PORT, "127.0.0.1", () => {
   console.log(`VideoLoader helper on http://127.0.0.1:${PORT} (out: ${OUT})`);
 });
+
+// [RABBIT] Чистка по расписанию, а не только на запросах: без скачиваний
+// старые файлы иначе лежали бы вечно.
+sweep();
+setInterval(sweep, 30 * 60 * 1000);

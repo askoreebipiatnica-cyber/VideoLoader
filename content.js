@@ -1,5 +1,7 @@
 "use strict";
 /* Content-script: следит за <video>, сообщает фону + отдаёт кандидатов из DOM. */
+// [COMPAT] Firefox MV3 понимает chrome.*; запасной вариант — browser.*.
+var chrome = globalThis.chrome || globalThis.browser;
 if (!globalThis.__vlLoaded) {
 globalThis.__vlLoaded = true;
 

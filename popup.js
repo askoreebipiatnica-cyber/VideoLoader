@@ -1,5 +1,7 @@
 "use strict";
-/* Popup: тема, вставка ссылки, статус операции. */
+/* Popup: тема, язык, вставка ссылки, статус операции. */
+// [COMPAT] Firefox: chrome.* есть в MV3, иначе берём browser.* (промисный стиль тот же).
+var chrome = globalThis.chrome || globalThis.browser;
 
 const $ = (id) => document.getElementById(id);
 const urlInput = $("url"), goBtn = $("go"), statusEl = $("status");
@@ -7,23 +9,103 @@ const autoHint = $("auto-hint"), autoSw = $("auto-sw");
 const histCard = $("hist-card"), histEl = $("hist");
 let lastShownAt = 0;
 
+/* --- i18n: словарь из _locales (единый источник), выбор языка в окне --- */
+const LANGS = ["ru", "en", "de", "zh", "kk", "ko"];
+let STR = {};
+function t(k) { return STR[k] !== undefined ? STR[k] : k; }
+function setText(id, s) { const el = $(id); if (el) el.textContent = s; }
+function browserLang() {
+  try {
+    const u = String((chrome.i18n && chrome.i18n.getUILanguage ? chrome.i18n.getUILanguage() : "en") || "en").toLowerCase();
+    if (u.startsWith("zh")) return "zh";
+    const s = u.split(/[-_]/)[0];
+    return LANGS.includes(s) ? s : "en";
+  } catch { return "en"; }
+}
+// [RABBIT-2] Гонка словаря: применяем только последний запрошенный язык.
+let langSeq = 0;
+async function loadDict(lang) {
+  const my = ++langSeq;
+  const d = {};
+  const chain = lang === "auto" ? [browserLang(), "en"] : [lang, "en"];
+  for (const l of chain) {
+    if (my !== langSeq) return;
+    try {
+      const r = await fetch(chrome.runtime.getURL(`_locales/${l}/messages.json`));
+      const j = await r.json();
+      for (const k of Object.keys(j)) {
+        if (d[k] === undefined && j[k] && typeof j[k].message === "string") d[k] = j[k].message;
+      }
+    } catch { /* нет такой локали — дальше по цепочке */ }
+  }
+  if (my !== langSeq) return;
+  STR = d;
+}
+function applyStrings() {
+  setText("lbl-url", t("ui_input_label"));
+  urlInput.placeholder = t("ui_input_ph");
+  goBtn.textContent = t("ui_download");
+  $("stop").textContent = t("ui_stop");
+  setText("auto-lbl", t("ui_auto"));
+  setText("hist-title", t("ui_hist"));
+  $("hist-clear").textContent = t("ui_clear");
+  document.querySelector('[data-set-theme="light"]').title = t("ui_th_light");
+  document.querySelector('[data-set-theme="auto"]').title = t("ui_th_auto");
+  document.querySelector('[data-set-theme="dark"]').title = t("ui_th_dark");
+  $("lang").title = t("ui_lang");
+  // [RABBIT-3] Итог операции переживает смену языка — переводим, а не сбрасываем.
+  if (lastResult) showResult(lastResult);
+  else setStatus(t("ui_status_default"));
+}
+async function initLang() {
+  const { "vl-lang": saved = "auto" } = await chrome.storage.local.get("vl-lang");
+  $("lang").value = saved;
+  await loadDict(saved);
+  applyStrings();
+  $("lang").addEventListener("change", async (e) => {
+    await chrome.storage.local.set({ "vl-lang": e.target.value });
+    await loadDict(e.target.value);
+    applyStrings();
+    showFoot();
+    refreshStatus();
+  });
+}
+
 function setStatus(text, cls) {
   statusEl.textContent = text;
   statusEl.className = "status" + (cls ? " " + cls : "");
 }
 
-/** Результат операции: отмена — нейтрально, успех — зелёным, ошибка — красным. */
+/** Текст ошибки фона: код -> локализованная строка (+ сырой detail для HELPER_FAIL). */
+function errText(res) {
+  if (res && typeof res.code === "string" && STR["err_" + res.code] !== undefined) {
+    return STR["err_" + res.code] + (res.detail || "");
+  }
+  return (res && res.error) || t("ui_unknown");
+}
+
+/** Результат операции: отмена — нейтрально, успех — зелёным, ошибка — красным.
+ *  [RABBIT-3] Запоминаем итог, чтобы смена языка его перевела, а не стёрла. */
+let lastResult = null;
 function showResult(res, okPrefix) {
-  if (res && res.ok) setStatus((okPrefix || "Готово: ") + (res.filename || "файл"), "ok");
-  else if (res && res.cancelled) setStatus("Остановлено.", "");
-  else if (res && res.needPlayback) setStatus("Прямую ссылку не достать — включи «Авто-сохранение» ниже, открой это видео в браузере и нажми Play.", "err");
-  else setStatus("Не вышло: " + ((res && res.error) || "unknown"), "err");
+  lastResult = res || null;
+  if (res && res.ok) setStatus((okPrefix || t("ui_ok")) + (res.filename || t("ui_file")), "ok");
+  else if (res && res.cancelled) setStatus(t("ui_stopped"), "");
+  else if (res && res.needPlayback) setStatus(t("ui_needplay"), "err");
+  else setStatus(t("ui_fail") + errText(res), "err");
+}
+
+/** Код этапа фона -> локализованный текст; сырое имя файла показываем как есть. */
+function stageText(label) {
+  const key = "st_" + label;
+  return STR[key] !== undefined ? STR[key] : label;
 }
 
 function showBusy(busy, label) {
   $("stop").style.display = busy ? "" : "none";
   goBtn.disabled = !!busy;
-  if (busy && label) setStatus(label + "… (можно закрыть окно — докачаю, или жми Стоп)");
+  // [RABBIT-4] Этап приходит кодом, суффикс тоже из словаря.
+  if (busy && label) setStatus(stageText(label) + " " + t("ui_busy_suffix"));
 }
 
 /* --- Тема: auto / light / dark --- */
@@ -66,31 +148,31 @@ function renderHist(items) {
     dot.title = it.state || "";
     const meta = document.createElement("div");
     meta.className = "meta";
-    const t = document.createElement("div");
-    t.className = "t";
-    t.textContent = it.filename || "файл";
+    const tEl = document.createElement("div");
+    tEl.className = "t";
+    tEl.textContent = it.filename || t("ui_file");
     const u = document.createElement("div");
     u.className = "u";
     u.textContent = fmtTime(it.at);
-    meta.append(t, u);
+    meta.append(tEl, u);
     li.append(dot, meta);
     if (it.downloadId != null) {
       const sh = document.createElement("button");
       sh.className = "btn mini";
-      sh.textContent = "Показать";
+      sh.textContent = t("ui_show");
       sh.addEventListener("click", async () => {
         const res = await chrome.runtime.sendMessage({ type: "SHOW", id: it.downloadId }).catch((e) => ({ ok: false, error: e.message }));
-        if (!(res && res.ok)) setStatus("Не показать: " + ((res && res.error) || "unknown"), "err");
+        if (!(res && res.ok)) setStatus(t("ui_no_show") + errText(res), "err");
       });
       const del = document.createElement("button");
       del.className = "btn mini danger";
       del.textContent = "✕";
-      del.title = "Удалить файл с диска";
+      del.title = t("ui_del_title");
       del.addEventListener("click", async () => {
-        if (!confirm(`Удалить файл с диска?\n${it.filename || ""}`)) return;
+        if (!confirm(`${t("ui_del_confirm")}\n${it.filename || ""}`)) return;
         const res = await chrome.runtime.sendMessage({ type: "DEL_FILE", id: it.downloadId }).catch((e) => ({ ok: false, error: e.message }));
-        if (res && res.ok) { setStatus("Файл удалён.", ""); refreshStatus(); }
-        else setStatus("Не удалилось: " + ((res && res.error) || "unknown"), "err");
+        if (res && res.ok) { setStatus(t("ui_deleted"), ""); refreshStatus(); }
+        else setStatus(t("ui_not_deleted") + errText(res), "err");
       });
       li.append(sh, del);
     }
@@ -100,8 +182,8 @@ function renderHist(items) {
 
 $("hist-clear").addEventListener("click", async () => {
   const res = await chrome.runtime.sendMessage({ type: "CLEAR_HIST" }).catch((e) => ({ ok: false, error: e.message }));
-  if (res && res.ok) { setStatus("Журнал очищен (файлы на диске целы).", ""); refreshStatus(); }
-  else setStatus("Не очистилось: " + ((res && res.error) || "unknown"), "err");
+  if (res && res.ok) { setStatus(t("ui_cleared"), ""); refreshStatus(); }
+  else setStatus(t("ui_not_cleared") + errText(res), "err");
 });
 
 async function refreshStatus() {
@@ -111,29 +193,32 @@ async function refreshStatus() {
     if (!st) return;
     showBusy(!!st.busy, st.label);
     renderHist(st.history);
-    if (st.auto) autoHint.textContent = st.auto === "done" ? (st.autoLabel || "готово") : "авто: сбор…";
+    // [RABBIT-4] Авто-статус тоже кодом.
+    if (st.auto) autoHint.textContent = "• " + (STR["au_" + st.autoLabel] !== undefined ? STR["au_" + st.autoLabel] : (st.autoLabel || ""));
     else autoHint.textContent = "";
     if (!st.busy && st.last && st.last.at !== lastShownAt) {
       lastShownAt = st.last.at;
-      if (st.last.ok) setStatus("Готово: " + (st.last.filename || "файл"), "ok");
-      else setStatus("Закачка сорвалась: " + (st.last.error || "unknown"), "err");
+      // [RABBIT-3] Фиксируем итог и для смены языка.
+      lastResult = { ok: !!st.last.ok, filename: st.last.filename, error: st.last.error };
+      if (st.last.ok) setStatus(t("ui_ok") + (st.last.filename || t("ui_file")), "ok");
+      else setStatus(t("ui_dl_fail") + (st.last.error || t("ui_unknown")), "err");
     }
   } catch (e) {
-    setStatus("Фоновая служба недоступна: " + (e && e.message ? e.message : e), "err");
+    setStatus(t("ui_bg_down") + (e && e.message ? e.message : e), "err");
   }
 }
 
 goBtn.addEventListener("click", async () => {
   const raw = urlInput.value.trim();
-  if (!raw) { setStatus("Вставьте ссылку.", "err"); return; }
+  if (!raw) { setStatus(t("ui_empty"), "err"); return; }
   goBtn.disabled = true;
-  setStatus("Разбираю ссылку…");
+  setStatus(t("ui_searching"));
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     const res = await chrome.runtime.sendMessage({ type: "RESOLVE_DOWNLOAD", url: raw, tabId: tab && tab.id });
     showResult(res);
   } catch (e) {
-    setStatus("Ошибка: " + e.message, "err");
+    setStatus(t("ui_err") + e.message, "err");
   } finally {
     goBtn.disabled = false;
   }
@@ -141,13 +226,13 @@ goBtn.addEventListener("click", async () => {
 });
 
 $("stop").addEventListener("click", async () => {
-  setStatus("Останавливаю…");
+  setStatus(t("ui_stopping"));
   try {
     const res = await chrome.runtime.sendMessage({ type: "CANCEL" });
-    if (res && res.ok) setStatus("Остановлено.", "");
-    else setStatus("Нечего останавливать.", "");
+    if (res && res.ok) setStatus(t("ui_stopped"), "");
+    else setStatus(t("ui_nothing"), "");
   } catch (e) {
-    setStatus("Ошибка: " + e.message, "err");
+    setStatus(t("ui_err") + e.message, "err");
   }
   refreshStatus();
 });
@@ -161,6 +246,7 @@ async function initAuto() {
 }
 
 initTheme();
+initLang();
 initAuto();
 refreshStatus();
 setInterval(refreshStatus, 1500);
@@ -169,7 +255,7 @@ setInterval(refreshStatus, 1500);
 async function showFoot() {
   try {
     const st = await chrome.runtime.sendMessage({ type: "GET_STATUS" }).catch(() => null);
-    const h = st && st.helper ? " · помощник вкл" : "";
+    const h = st && st.helper ? " · " + t("ui_helper_on") : "";
     $("foot-ver").textContent = `VideoLoader ${chrome.runtime.getManifest().version}${h}`;
   } catch { /* popup без manifest — оставляем статичный текст */ }
 }

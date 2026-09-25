@@ -9,7 +9,20 @@ const path = require("path");
 const PORT = parseInt(process.env.VL_PORT || "8765", 10);
 const DIR = __dirname;
 const OUT = path.join(DIR, "out");
-const YTDLP = process.env.VL_YTDLP || path.join(DIR, "..", "yt-dlp.exe");
+// [MACOS] Ищем yt-dlp везде: env -> рядом (win/mac) -> PATH (brew/pip).
+function resolveYtdlp() {
+  if (process.env.VL_YTDLP) {
+    try { if (fs.existsSync(process.env.VL_YTDLP)) return process.env.VL_YTDLP; } catch { /* дальше */ }
+  }
+  for (const n of ["yt-dlp.exe", "yt-dlp"]) {
+    try {
+      const p = path.join(DIR, "..", n);
+      if (fs.existsSync(p)) return p;
+    } catch { /* дальше */ }
+  }
+  return "yt-dlp"; // из PATH: macOS/Linux (brew/pip), Windows при установке в PATH
+}
+const YTDLP = resolveYtdlp();
 // [SEC-FIX SEC-07] Не больше двух yt-dlp одновременно (каждый живёт до 240с).
 const MAX_RUNNING = 2;
 let running = 0;

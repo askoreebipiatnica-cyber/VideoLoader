@@ -1,0 +1,12 @@
+# CodeRabbit: ревью на русском, игнор бинарников и сгенерированных файлов.
+language: "ru-RU"
+tone: "assertive"
+reviews:
+  profile: "assertive"
+  request_changes_workflow: true
+  collapse_walkthrough: false
+  # Не ревьюить бинарники, сгенерированные иконки и демо-гифку
+  path_filters:
+    - "!docs/demo.gif"
+    - "!icons/*.png"
+    - "!**/__pycache__/**"

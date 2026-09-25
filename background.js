@@ -85,16 +85,16 @@ async function autoCapture(tabId) {
 
   const dur = s.duration || 0;
   if (dur === Infinity) {
-    autoState.set(tabId, { status: "wait", at: Date.now(), label: "эфир — пропускаю" });
+    autoState.set(tabId, { status: "wait", at: Date.now(), label: "LIVE" });
     return;
   }
   if (dur > 0 && dur < 3) {
-    autoState.set(tabId, { status: "wait", at: Date.now(), label: "короткое — пропускаю" });
+    autoState.set(tabId, { status: "wait", at: Date.now(), label: "SHORT" });
     return;
   }
   const found = await probeTab(tabId);
   if (found.kind !== "playable") {
-    autoState.set(tabId, { status: "wait", at: Date.now(), label: "ищу файл…" });
+    autoState.set(tabId, { status: "wait", at: Date.now(), label: "WAIT" });
     return;
   }
   const items = detected.get(tabId) || [];
@@ -105,17 +105,17 @@ async function autoCapture(tabId) {
     return b === 0 || b >= 256 * 1024;
   });
   if (!big.length) {
-    autoState.set(tabId, { status: "wait", at: Date.now(), label: "мелочь — пропускаю" });
+    autoState.set(tabId, { status: "wait", at: Date.now(), label: "SMALL" });
     return;
   }
   const best = items.find((x) => big.includes(x.url));
   if (best) {
-    await runOp("auto", "Авто-сохранение", async () => {
+    await runOp("auto", "AUTO", async () => {
       await doDownload(best.url, best.title || "");
     }).catch(() => {});
-    autoState.set(tabId, { status: "done", at: Date.now(), label: "сохранил" });
+    autoState.set(tabId, { status: "done", at: Date.now(), label: "SAVED" });
   } else {
-    autoState.set(tabId, { status: "wait", at: Date.now(), label: "ищу файл…" });
+    autoState.set(tabId, { status: "wait", at: Date.now(), label: "WAIT" });
   }
 }
 
@@ -329,7 +329,7 @@ async function probeOne(url, signal) {
 /** Запасной вариант: если для вкладки уже пойман цельный поток — скачать его.
  *  Фрагменты DASH молча пропускаем (проверяем первые байты, максимум 3 кандидата). */
 async function tryCaught(tabId, signal) {
-  if (active) active.label = "Проверяю пойманное";
+  if (active) active.label = "CHECK_CAUGHT";
   const list = (tabId != null && detected.get(tabId)) || [];
   const cands = [
     ...list.filter((x) => x.kind === "file" && x.label === "MP4"),
@@ -498,7 +498,7 @@ async function resolveDownload(raw, tabId, signal) {
   // Сначала помощник (yt-dlp локально): умеет то же, что сайты-качалки
   let helperError = "";
   if (await helperUp()) {
-    stage("Качаю через помощник");
+    stage("DOWNLOAD");
     try {
       return await helperDownload(url, signal);
     } catch (e) {
@@ -509,10 +509,10 @@ async function resolveDownload(raw, tabId, signal) {
   }
   const helperFail = () => ({ ok: false, code: "HELPER_FAIL", detail: helperError });
 
-  stage("Открываю ссылку");
+  stage("OPEN_LINK");
   const ct = await headContentType(url, signal);
   if (/^video\//i.test(ct) || (P.isDirectMedia(url) && !P.isPlaylist(url, ct))) {
-    stage("Качаю");
+    stage("DOWNLOAD");
     if ((await probeOne(url, signal)) === "fragment") {
       return { ok: false, code: "NOFILE" };
     }
@@ -521,7 +521,7 @@ async function resolveDownload(raw, tabId, signal) {
   }
   if (P.isPlaylist(url, ct)) return { ok: false, code: "PLAYLIST" };
 
-  stage("Открываю страницу");
+  stage("OPEN_PAGE");
   let html = "";
   try {
     const r = await fetchWithTimeout(url, { credentials: "include" }, 25000, signal);
@@ -530,12 +530,12 @@ async function resolveDownload(raw, tabId, signal) {
   } catch (e) {
     if (signal && signal.aborted) throw signal.reason;
     // Фоновая загрузка не прошла — спрашиваем саму вкладку (там вход уже есть)
-    stage("Спрашиваю вкладку");
+    stage("ASK_TAB");
     const tabUrls = await askTab(tabId, signal);
     for (const u of tabUrls.slice(0, 5)) {
       if (signal) signal.throwIfAborted();
       if ((await probeOne(u, signal)) === "playable") {
-        stage("Качаю");
+        stage("DOWNLOAD");
         const dl = await doDownload(u, "");
         return { ...dl, note: "tab" };
       }
@@ -545,12 +545,12 @@ async function resolveDownload(raw, tabId, signal) {
     return { ok: false, code: "SITE_TIMEOUT" };
   }
 
-  stage("Ищу video_url");
+  stage("FIND_URL");
   const og = P.extractFromHtml(html, url);
   let sawFragment = false;
   if (og.length) {
     if ((await probeOne(og[0], signal)) !== "fragment") {
-      stage("Качаю");
+      stage("DOWNLOAD");
       const dl = await doDownload(og[0], "");
       return { ...dl, note: "og:video" };
     }
@@ -561,7 +561,7 @@ async function resolveDownload(raw, tabId, signal) {
   for (const u of inline.slice(0, 3)) {
     if (signal) signal.throwIfAborted();
     if ((await probeOne(u, signal)) === "playable") {
-      stage("Качаю");
+      stage("DOWNLOAD");
       const dl = await doDownload(u, "");
       return { ...dl, note: "page" };
     }
@@ -571,16 +571,16 @@ async function resolveDownload(raw, tabId, signal) {
   // Instagram API (info + GraphQL Polaris): цельные video_versions
   const sc = P.instagramShortcode(url);
   if (sc) {
-    stage("Проверяю API Instagram");
+    stage("CHECK_API");
     const hit = await igApiDownload(sc, url, signal);
     if (hit) return hit;
   }
   // TikTok: playAddr из JSON страницы (как save-сервисы парсят разметку)
   if (/tiktok\.com\//i.test(url)) {
-    stage("Проверяю TikTok");
+    stage("CHECK_TT");
     const tt = P.extractTikTok(html);
     if (tt.length && (await probeOne(tt[0], signal)) !== "fragment") {
-      stage("Качаю");
+      stage("DOWNLOAD");
       const dl = await doDownload(tt[0], "");
       return { ...dl, note: "tiktok" };
     }
@@ -588,13 +588,13 @@ async function resolveDownload(raw, tabId, signal) {
   // Instagram: embed-страница часто отдаёт og:video без входа
   const emb = P.embedUrl(url);
   if (emb) {
-    stage("Проверяю embed");
+    stage("CHECK_EMBED");
     try {
       const r = await fetchWithTimeout(emb, { credentials: "include" }, 20000, signal);
       const eh = (await r.text()).slice(0, 2_000_000);
       const og2 = P.extractFromHtml(eh, emb);
       if (og2.length && (await probeOne(og2[0], signal)) !== "fragment") {
-        stage("Качаю");
+        stage("DOWNLOAD");
         const dl = await doDownload(og2[0], "");
         return { ...dl, note: "embed" };
       }
@@ -603,21 +603,21 @@ async function resolveDownload(raw, tabId, signal) {
     }
   }
   if (/youtube\.com\/watch|youtu\.be\//i.test(url)) {
-    stage("Проверяю YouTube");
+    stage("CHECK_YT");
     const yt = P.extractYouTube(html);
     if (yt.length) {
-      stage("Качаю");
+      stage("DOWNLOAD");
       const dl = await doDownload(yt[0], "");
       return { ...dl, note: "youtube" };
     }
   }
   // Последний шанс: спросить саму вкладку (залогиненный DOM видит больше фонового запроса)
-  stage("Спрашиваю вкладку");
+  stage("ASK_TAB");
   const tabUrls = await askTab(tabId, signal);
   for (const u of tabUrls.slice(0, 5)) {
     if (signal) signal.throwIfAborted();
     if ((await probeOne(u, signal)) === "playable") {
-      stage("Качаю");
+      stage("DOWNLOAD");
       const dl = await doDownload(u, "");
       return { ...dl, note: "tab" };
     }
@@ -678,7 +678,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         // [SEC-FIX SEC-03] url обязан быть строкой; tabId валидируем внутри resolveDownload через askTab.
         if (typeof msg.url !== "string") throw new Error("bad url");
         const tabId = validTabId(msg.tabId, sender);
-        sendResponse(await runOp("fetch", "Разбираю ссылку", (sig) => resolveDownload(msg.url, tabId, sig)));
+        sendResponse(await runOp("fetch", "FETCH", (sig) => resolveDownload(msg.url, tabId, sig)));
       }
       catch (e) { sendResponse({ ok: false, error: String((e && e.message) || e) }); }
     } else if (msg.type === "CANCEL") {

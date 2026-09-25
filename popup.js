@@ -22,18 +22,24 @@ function browserLang() {
     return LANGS.includes(s) ? s : "en";
   } catch { return "en"; }
 }
+// [RABBIT-2] Гонка словаря: применяем только последний запрошенный язык.
+let langSeq = 0;
 async function loadDict(lang) {
-  STR = {};
+  const my = ++langSeq;
+  const d = {};
   const chain = lang === "auto" ? [browserLang(), "en"] : [lang, "en"];
   for (const l of chain) {
+    if (my !== langSeq) return;
     try {
       const r = await fetch(chrome.runtime.getURL(`_locales/${l}/messages.json`));
       const j = await r.json();
       for (const k of Object.keys(j)) {
-        if (STR[k] === undefined && j[k] && typeof j[k].message === "string") STR[k] = j[k].message;
+        if (d[k] === undefined && j[k] && typeof j[k].message === "string") d[k] = j[k].message;
       }
     } catch { /* нет такой локали — дальше по цепочке */ }
   }
+  if (my !== langSeq) return;
+  STR = d;
 }
 function applyStrings() {
   setText("lbl-url", t("ui_input_label"));
@@ -47,7 +53,9 @@ function applyStrings() {
   document.querySelector('[data-set-theme="auto"]').title = t("ui_th_auto");
   document.querySelector('[data-set-theme="dark"]').title = t("ui_th_dark");
   $("lang").title = t("ui_lang");
-  setStatus(t("ui_status_default"));
+  // [RABBIT-3] Итог операции переживает смену языка — переводим, а не сбрасываем.
+  if (lastResult) showResult(lastResult);
+  else setStatus(t("ui_status_default"));
 }
 async function initLang() {
   const { "vl-lang": saved = "auto" } = await chrome.storage.local.get("vl-lang");
@@ -76,18 +84,28 @@ function errText(res) {
   return (res && res.error) || t("ui_unknown");
 }
 
-/** Результат операции: отмена — нейтрально, успех — зелёным, ошибка — красным. */
+/** Результат операции: отмена — нейтрально, успех — зелёным, ошибка — красным.
+ *  [RABBIT-3] Запоминаем итог, чтобы смена языка его перевела, а не стёрла. */
+let lastResult = null;
 function showResult(res, okPrefix) {
+  lastResult = res || null;
   if (res && res.ok) setStatus((okPrefix || t("ui_ok")) + (res.filename || t("ui_file")), "ok");
   else if (res && res.cancelled) setStatus(t("ui_stopped"), "");
   else if (res && res.needPlayback) setStatus(t("ui_needplay"), "err");
   else setStatus(t("ui_fail") + errText(res), "err");
 }
 
+/** Код этапа фона -> локализованный текст; сырое имя файла показываем как есть. */
+function stageText(label) {
+  const key = "st_" + label;
+  return STR[key] !== undefined ? STR[key] : label;
+}
+
 function showBusy(busy, label) {
   $("stop").style.display = busy ? "" : "none";
   goBtn.disabled = !!busy;
-  if (busy && label) setStatus(label + "… (можно закрыть окно — докачаю, или жми Стоп)");
+  // [RABBIT-4] Этап приходит кодом, суффикс тоже из словаря.
+  if (busy && label) setStatus(stageText(label) + " " + t("ui_busy_suffix"));
 }
 
 /* --- Тема: auto / light / dark --- */
@@ -175,10 +193,13 @@ async function refreshStatus() {
     if (!st) return;
     showBusy(!!st.busy, st.label);
     renderHist(st.history);
-    if (st.auto) autoHint.textContent = st.auto === "done" ? (st.autoLabel || t("ui_auto_hint_done")) : t("ui_auto_hint_busy");
+    // [RABBIT-4] Авто-статус тоже кодом.
+    if (st.auto) autoHint.textContent = "• " + (STR["au_" + st.autoLabel] !== undefined ? STR["au_" + st.autoLabel] : (st.autoLabel || ""));
     else autoHint.textContent = "";
     if (!st.busy && st.last && st.last.at !== lastShownAt) {
       lastShownAt = st.last.at;
+      // [RABBIT-3] Фиксируем итог и для смены языка.
+      lastResult = { ok: !!st.last.ok, filename: st.last.filename, error: st.last.error };
       if (st.last.ok) setStatus(t("ui_ok") + (st.last.filename || t("ui_file")), "ok");
       else setStatus(t("ui_dl_fail") + (st.last.error || t("ui_unknown")), "err");
     }

@@ -38,10 +38,13 @@ git clone https://github.com/askoreebipiatnica-cyber/VideoLoader.git
 
 ## Локальный помощник
 Сервер на твоей машине (Node + yt-dlp), только `127.0.0.1`:
-- `tools\helper\run-helper.bat` — запуск (оставь окно висеть).
+- Windows: `helper\run-helper.bat`, macOS/Linux: `helper/run-helper.sh` (нужны node и yt-dlp в PATH; на Unix сначала `chmod +x helper/run-helper.sh`).
 - Тянет видео через yt-dlp **с куками твоего Chrome** — доступны и приватные посты.
 - Не запущен — расширение молча идёт по встроенной цепочке.
-- Готовое складывается в `tools\helper\out`, старше часа чистится само.
+- Готовое складывается в `helper\out`, старше часа чистится само.
+
+## Установка в Firefox
+`about:debugging#/runtime/this-firefox` → **Load Temporary Add-on** → выбери `manifest.json` из папки. Работает до перезапуска браузера (без подписи Mozilla иначе нельзя).
 
 ## Честные ограничения
 - Качается только цельный MP4/WEBM. Нет цельного файла — расширение так и скажет, битый файл не подсунет.
@@ -98,10 +101,13 @@ Without the helper it also works: enable **Auto-save**, open the video, press Pl
 
 ## Local helper
 A server on your machine (Node + yt-dlp), `127.0.0.1` only:
-- `helper\run-helper.bat` to start (leave the window open).
+- Windows: `helper\run-helper.bat`, macOS/Linux: `helper/run-helper.sh` (needs node and yt-dlp in PATH; on Unix first `chmod +x helper/run-helper.sh`).
 - Downloads via yt-dlp **with your Chrome cookies** — private posts work too.
 - Not running — the extension silently falls back to the built-in chain.
 - Finished files go to `helper\out`, auto-cleaned after an hour.
+
+## Firefox install
+`about:debugging#/runtime/this-firefox` → **Load Temporary Add-on** → pick `manifest.json` from the folder. Works until browser restart (no other way without Mozilla signing).
 
 ## Honest limits
 - Only whole MP4/WEBM files. No whole file — it says so, never a broken file.

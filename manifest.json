@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "VideoLoader — качалка видео",
-  "version": "3.3.1",
+  "version": "3.4.0",
   "description": "Скачивание видео: вставьте ссылку или заберите поток, пойманный при воспроизведении.",
   "action": {
     "default_popup": "popup.html",

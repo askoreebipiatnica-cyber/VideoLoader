@@ -168,7 +168,13 @@ async function showFoot() {
   try {
     const st = await chrome.runtime.sendMessage({ type: "GET_STATUS" }).catch(() => null);
     const h = st && st.helper ? " · помощник вкл" : "";
-    $("foot").textContent = `VideoLoader ${chrome.runtime.getManifest().version}${h}`;
+    $("foot-ver").textContent = `VideoLoader ${chrome.runtime.getManifest().version}${h}`;
   } catch { /* popup без manifest — оставляем статичный текст */ }
 }
 showFoot();
+
+/* Донат: открываем в новой вкладке, popup при этом не ломаем */
+document.getElementById("donate").addEventListener("click", (e) => {
+  e.preventDefault();
+  chrome.tabs.create({ url: "https://pay.cloudtips.ru/p/ac545b44" }).catch(() => {});
+});

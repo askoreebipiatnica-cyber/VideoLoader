@@ -136,3 +136,5 @@ input#url:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(10, 13
 .auto-row { display: flex; align-items: center; gap: 7px; margin-top: 9px; font-size: 12px; color: var(--ink-2); cursor: pointer; }
 .auto-row input { accent-color: var(--accent); width: 14px; height: 14px; }
 .foot { text-align: center; color: var(--ink-2); font-size: 11px; padding: 2px 0; }
+.foot a { color: var(--ink-2); text-decoration: none; font-size: 13px; padding: 0 2px; }
+.foot a:hover { color: #ff453a; }

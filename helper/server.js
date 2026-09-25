@@ -28,8 +28,7 @@ function extOriginOk(req) {
 }
 
 // Чистим файлы старше часа при каждом запросе
-function sweep() {
-  try {
+function sweep() {  try {
     const now = Date.now();
     for (const f of fs.readdirSync(OUT)) {
       const p = path.join(OUT, f);
@@ -127,3 +126,8 @@ const server = http.createServer((req, res) => {
 server.listen(PORT, "127.0.0.1", () => {
   console.log(`VideoLoader helper on http://127.0.0.1:${PORT} (out: ${OUT})`);
 });
+
+// [RABBIT] Чистка по расписанию, а не только на запросах: без скачиваний
+// старые файлы иначе лежали бы вечно.
+sweep();
+setInterval(sweep, 30 * 60 * 1000);

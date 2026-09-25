@@ -42,7 +42,7 @@ git clone https://github.com/askoreebipiatnica-cyber/VideoLoader.git
 - macOS/Linux: установи yt-dlp в PATH (`brew install yt-dlp` или через pip), затем `chmod +x helper/run-helper.sh && ./helper/run-helper.sh`.
 - Тянет видео через yt-dlp **с куками твоего Chrome** — доступны и приватные посты.
 - Не запущен — расширение молча идёт по встроенной цепочке.
-- Готовое складывается в `helper/out`, старше часа чистится само.
+- Готовое складывается в `helper/out`, чистка каждые 30 минут (файлы старше часа).
 
 ## Установка в Firefox
 `about:debugging#/runtime/this-firefox` → **Load Temporary Add-on** → выбери `manifest.json` из папки. Работает до перезапуска браузера (без подписи Mozilla иначе нельзя).
@@ -106,7 +106,7 @@ A server on your machine (Node + yt-dlp), `127.0.0.1` only. Install yt-dlp first
 - macOS/Linux: install yt-dlp into PATH (`brew install yt-dlp` or via pip), then `chmod +x helper/run-helper.sh && ./helper/run-helper.sh`.
 - Downloads via yt-dlp **with your Chrome cookies** — private posts work too.
 - Not running — the extension silently falls back to the built-in chain.
-- Finished files go to `helper/out`, auto-cleaned after an hour.
+- Finished files go to `helper/out`, swept every 30 minutes (files older than an hour).
 
 ## Firefox install
 `about:debugging#/runtime/this-firefox` → **Load Temporary Add-on** → pick `manifest.json` from the folder. Works until browser restart (no other way without Mozilla signing).

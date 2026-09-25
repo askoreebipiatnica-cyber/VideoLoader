@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="auto">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="popup.css">
+</head>
+<body>
+<div class="window">
+  <header class="toolbar">
+    <div class="traffic">
+      <span class="dot close"></span><span class="dot min"></span><span class="dot max"></span>
+    </div>
+    <h1 class="title">VideoLoader</h1>
+    <div class="theme-seg" role="group" aria-label="Тема">
+      <button data-set-theme="light" title="Светлая">☀</button>
+      <button data-set-theme="auto" title="Как в системе" class="on">◐</button>
+      <button data-set-theme="dark" title="Тёмная">☾</button>
+    </div>
+  </header>
+
+  <section class="card url-card">
+    <label class="lbl" for="url">Ссылка на видео или страницу</label>
+    <div class="row">
+      <input id="url" type="url" placeholder="https://…mp4 или страница YouTube / TikTok / Instagram" spellcheck="false" autocomplete="off">
+      <button id="go" class="btn primary">Скачать</button>
+      <button id="stop" class="btn danger" style="display:none">Стоп</button>
+    </div>
+    <p id="status" class="status">Вставьте ссылку и нажмите «Скачать».</p>
+    <div class="row" style="margin-top:8px;align-items:center">
+      <span id="auto-hint" class="hint" style="margin:0"></span>
+    </div>
+    <label class="auto-row">
+      <input type="checkbox" id="auto-sw" checked>
+      <span>Авто-сохранение при просмотре видео</span>
+    </label>
+  </section>
+
+  <section class="card" id="hist-card" style="display:none">
+    <div class="row split">
+      <h2 class="h2">Скачанное</h2>
+      <button id="hist-clear" class="btn ghost">Очистить</button>
+    </div>
+    <ul id="hist" class="list" style="margin-top:8px"></ul>
+  </section>
+
+  <footer class="foot" id="foot">VideoLoader</footer>
+</div>
+<script src="popup.js"></script>
+</body>
+</html>

@@ -27,10 +27,15 @@ function extOriginOk(req) {
   return /^chrome-extension:\/\/[a-z]+$/i.test(o);
 }
 
-// Чистим файлы старше часа при каждом запросе
-function sweep() {  try {
+// [RABBIT] Файлы, которые сейчас раздаём в /file/: чистка их не трогает.
+const serving = new Set();
+
+// Чистим файлы старше часа: на запросах + по расписанию (см. низ файла)
+function sweep() {
+  try {
     const now = Date.now();
     for (const f of fs.readdirSync(OUT)) {
+      if (serving.has(f)) continue; // [RABBIT] не удаляем то, что сейчас читается
       const p = path.join(OUT, f);
       try {
         if (now - fs.statSync(p).mtimeMs > 3600_000) fs.unlinkSync(p);
@@ -102,7 +107,15 @@ const server = http.createServer((req, res) => {
       "Content-Length": fs.statSync(fp).size,
       "Content-Disposition": `attachment; filename="${name}"`,
     });
-    fs.createReadStream(fp).pipe(res);
+    // [RABBIT] Ошибка чтения без слушателя роняет процесс; файл в раздаче не чистим.
+    serving.add(name);
+    const st = fs.createReadStream(fp);
+    st.on("error", () => {
+      serving.delete(name);
+      try { if (!res.headersSent) res.writeHead(500); res.end(); } catch { /* ignore */ }
+    });
+    res.on("close", () => serving.delete(name));
+    st.pipe(res);
     return;
   }
   if (req.method === "POST" && u.pathname === "/download") {

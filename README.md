@@ -37,11 +37,12 @@ git clone https://github.com/askoreebipiatnica-cyber/VideoLoader.git
 Без помощника тоже работает: включи **«Авто-сохранение»**, открой видео, нажми Play — файл сохранится сам.
 
 ## Локальный помощник
-Сервер на твоей машине (Node + yt-dlp), только `127.0.0.1`:
-- Windows: `helper\run-helper.bat`, macOS/Linux: `helper/run-helper.sh` (нужны node и yt-dlp в PATH; на Unix сначала `chmod +x helper/run-helper.sh`).
+Сервер на твоей машине (Node + yt-dlp), только `127.0.0.1`. Сначала поставь сам yt-dlp:
+- Windows: скачай `yt-dlp.exe` с https://github.com/yt-dlp/yt-dlp/releases в папку расширения (рядом с `manifest.json`), затем запусти `helper/run-helper.bat`.
+- macOS/Linux: установи yt-dlp в PATH (`brew install yt-dlp` или через pip), затем `chmod +x helper/run-helper.sh && ./helper/run-helper.sh`.
 - Тянет видео через yt-dlp **с куками твоего Chrome** — доступны и приватные посты.
 - Не запущен — расширение молча идёт по встроенной цепочке.
-- Готовое складывается в `helper\out`, старше часа чистится само.
+- Готовое складывается в `helper/out`, старше часа чистится само.
 
 ## Установка в Firefox
 `about:debugging#/runtime/this-firefox` → **Load Temporary Add-on** → выбери `manifest.json` из папки. Работает до перезапуска браузера (без подписи Mozilla иначе нельзя).
@@ -100,11 +101,12 @@ Then steps 2–4 from option A with the cloned folder.
 Without the helper it also works: enable **Auto-save**, open the video, press Play — the file saves itself.
 
 ## Local helper
-A server on your machine (Node + yt-dlp), `127.0.0.1` only:
-- Windows: `helper\run-helper.bat`, macOS/Linux: `helper/run-helper.sh` (needs node and yt-dlp in PATH; on Unix first `chmod +x helper/run-helper.sh`).
+A server on your machine (Node + yt-dlp), `127.0.0.1` only. Install yt-dlp first:
+- Windows: download `yt-dlp.exe` from https://github.com/yt-dlp/yt-dlp/releases into the extension folder (next to `manifest.json`), then run `helper/run-helper.bat`.
+- macOS/Linux: install yt-dlp into PATH (`brew install yt-dlp` or via pip), then `chmod +x helper/run-helper.sh && ./helper/run-helper.sh`.
 - Downloads via yt-dlp **with your Chrome cookies** — private posts work too.
 - Not running — the extension silently falls back to the built-in chain.
-- Finished files go to `helper\out`, auto-cleaned after an hour.
+- Finished files go to `helper/out`, auto-cleaned after an hour.
 
 ## Firefox install
 `about:debugging#/runtime/this-firefox` → **Load Temporary Add-on** → pick `manifest.json` from the folder. Works until browser restart (no other way without Mozilla signing).

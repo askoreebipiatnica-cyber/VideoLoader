@@ -132,6 +132,7 @@ footer a { color: var(--acc); text-decoration: none; }
 </div></nav>
 
 <header class="hero">
+  <canvas id="gradient-canvas" class="gradient-bg"></canvas>
   <div class="orb a"></div><div class="orb b"></div>
   <div class="badge" data-i="badge">🧩 <b>Расширение для браузера</b> · Chrome · Edge · Firefox · Opera</div>
   <h1><span data-i="h1a">Качай видео</span><br><span class="stroke" data-i="h1b">одной кнопкой</span></h1>
@@ -287,5 +288,6 @@ document.querySelectorAll(".lang button").forEach((b) => {
   });
 });
 </script>
+<script src="gradient-shader.js"></script>
 </body>
 </html>

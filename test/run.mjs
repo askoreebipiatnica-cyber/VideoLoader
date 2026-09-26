@@ -155,6 +155,7 @@ eq("mediaish mp4", P.isMediaish("https://x.com/v.mp4?x=1"), true);
 eq("mediaish mp3", P.isMediaish("https://cs.test/a.mp3"), true);
 eq("mediaish cdn", P.isMediaish("https://scontent-hel3-1.cdninstagram.com/v/t50/x"), true);
 eq("mediaish playback", P.isMediaish("https://rr.googlevideo.com/videoplayback?mime=video%2Fmp4"), true);
+eq("mediaish suno", P.isMediaish("https://cdn1.suno.ai/abcd1234.mp3"), true);
 eq("mediaish gif no", P.isMediaish("https://x.com/a.gif"), false);
 eq("mediaish png no", P.isMediaish("https://x.com/a.png"), false);
 eq("mediaish js no", P.isMediaish("https://x.com/a.js"), false);

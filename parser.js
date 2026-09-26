@@ -43,7 +43,7 @@
     if (api.isDirectMedia(u) || api.isDirectAudio(u)) return true;
     if (api.isPlaylist(u, "")) return true;
     if (/videoplayback|mime=video|mime=audio/i.test(u)) return true;
-    return /cdninstagram|fbcdn|googlevideo|tiktokcdn|tiktokv|vxtiktok|vkuservideo|vkuseraudio|akamaihd/i.test(u);
+    return /cdninstagram|fbcdn|googlevideo|tiktokcdn|tiktokv|vxtiktok|akamaihd/i.test(u);
   };
 
   /** Это HLS/DASH плейлист. */

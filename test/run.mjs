@@ -152,7 +152,7 @@ eq("safe long", P.isSafeHttpUrl("https://x.com/" + "a".repeat(2048)), false);
 
 // isMediaish: медиа да, гифки/картинки нет
 eq("mediaish mp4", P.isMediaish("https://x.com/v.mp4?x=1"), true);
-eq("mediaish mp3", P.isMediaish("https://cs1.vk.ru/a.mp3"), true);
+eq("mediaish mp3", P.isMediaish("https://cs.test/a.mp3"), true);
 eq("mediaish cdn", P.isMediaish("https://scontent-hel3-1.cdninstagram.com/v/t50/x"), true);
 eq("mediaish playback", P.isMediaish("https://rr.googlevideo.com/videoplayback?mime=video%2Fmp4"), true);
 eq("mediaish gif no", P.isMediaish("https://x.com/a.gif"), false);
@@ -161,7 +161,7 @@ eq("mediaish js no", P.isMediaish("https://x.com/a.js"), false);
 eq("mediaish page no", P.isMediaish("https://x.com/about"), false);
 
 // аудио: прямые файлы, заголовки, og:audio
-eq("audio mp3", P.isDirectAudio("https://cs1.vk.ru/a.mp3?x=1"), true);
+eq("audio mp3", P.isDirectAudio("https://cs.test/a.mp3?x=1"), true);
 eq("audio m4a", P.isDirectAudio("https://x.com/a.M4A"), true);
 eq("audio no", P.isDirectAudio("https://x.com/v.mp4"), false);
 eq("audio head id3", P.hasAudioHead(new Uint8Array([0x49, 0x44, 0x33, 4, 0])), true);
@@ -174,7 +174,7 @@ eq("audio ext mp3", P.extByContentType("audio/mpeg"), ".mp3");
 eq("audio ext ogg", P.extByContentType("audio/ogg"), ".ogg");
 eq("audio ext m4a", P.extByContentType("audio/mp4"), ".m4a");
 eq("video ogg stays ogv", P.extByContentType("video/ogg"), ".ogv");
-eq("og audio meta", P.extractFromHtml(`<meta property="og:audio" content="https://cs1.vk.ru/a.mp3">`, "https://vk.ru/"), ["https://cs1.vk.ru/a.mp3"]);
+eq("og audio meta", P.extractFromHtml(`<meta property="og:audio" content="https://cs.test/a.mp3">`, "https://vk.ru/"), ["https://cs.test/a.mp3"]);
 
 // manifest валиден
 const mf = JSON.parse(readFileSync(new URL("../manifest.json", import.meta.url), "utf8"));

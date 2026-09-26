@@ -12,7 +12,7 @@
 Если расширение экономит время — [поддержи разработку ♥](https://pay.cloudtips.ru/p/ac545b44).
 
 ## Что умеет
-- 🎯 **Одна строка + «Скачать»** — вставь ссылку на видео, пост, рилс, TikTok, YouTube — или музыку VK (mp3/m4a/ogg).
+- 🎯 **Одна строка + «Скачать»** — вставь ссылку на видео, пост, рилс, TikTok, YouTube — или прямую ссылку на музыку (mp3/m4a/ogg).
 - 🌍 **6 языков**: русский, English, Deutsch, 中文, қазақша, 한국어 — переключатель в окне, по умолчанию язык браузера.
 - 🧠 **Сам ищет цельный файл**: помощник → прямой MP4 → данные открытой вкладки → `og:video` → `video_url` → Instagram API → TikTok → embed. Мусор не сохраняет — скажет честно.
 - ⚡ **Авто-сохранение** (по умолчанию выкл): смотришь видео — файл сам падает в загрузки. Мелочь и анимации пропускаются.
@@ -78,7 +78,7 @@ Free open-source extension. No sign-up, no watermarks. Works on Windows and macO
 If the extension saves you time — [support development ♥](https://pay.cloudtips.ru/p/ac545b44).
 
 ## Features
-- 🎯 **One input + “Download”** — paste a video, post, reel, TikTok or YouTube link — or VK music (mp3/m4a/ogg).
+- 🎯 **One input + “Download”** — paste a video, post, reel, TikTok or YouTube link — or a direct music link (mp3/m4a/ogg).
 - 🌍 **6 languages**: русский, English, Deutsch, 中文, қазақша, 한국어 — switcher in the popup, browser language by default.
 - 🧠 **Finds the whole file itself**: helper → direct MP4 → open tab data → `og:video` → `video_url` → Instagram API → TikTok → embed. Junk is never saved — it tells you straight.
 - ⚡ **Auto-save** (off by default): watch a video — the file saves itself. Trivia and animations are skipped.

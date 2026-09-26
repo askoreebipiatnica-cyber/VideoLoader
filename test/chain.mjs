@@ -223,11 +223,11 @@ function eq(name, got, want) {
   eq("chain ig-api url", calls.length === 1 && calls[0].url, "https://cdn.test/full.mp4");
 }
 
-// Сценарий 11: og:audio (музыка VK) — качаем mp3
+// Сценарий 11: og:audio — качаем mp3
 {
   const html = `<html><head><meta property="og:audio" content="https://cs.test/track.mp3"></head></html>`;
   const { ctx, calls } = makeCtx({ text: () => html });
-  const r = await vm.runInContext(`resolveDownload("https://vk.ru/audio-2001997256_148997256", 1, null)`, ctx);
+  const r = await vm.runInContext(`resolveDownload("https://music.example/track-1", 1, null)`, ctx);
   eq("chain audio ok", { ok: r.ok, note: r.note }, { ok: true, note: "og:video" });
   eq("chain audio url", calls.length === 1 && calls[0].url, "https://cs.test/track.mp3");
 }
@@ -235,7 +235,7 @@ function eq(name, got, want) {
 // Сценарий 12: гифка из вкладки — пропускаем, закачек нет
 {
   const { ctx, calls } = makeCtx({ text: () => "<html></html>", tabCands: ["https://x.test/a.gif"] });
-  const r = await vm.runInContext(`resolveDownload("https://vk.ru/audio-1_2", 1, null)`, ctx);
+  const r = await vm.runInContext(`resolveDownload("https://music.example/track-2", 1, null)`, ctx);
   eq("chain gif skipped", { ok: r.ok, needPlayback: r.needPlayback }, { ok: false, needPlayback: true });
   eq("chain gif no downloads", calls.length, 0);
 }

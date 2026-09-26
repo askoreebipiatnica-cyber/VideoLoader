@@ -232,6 +232,14 @@ function eq(name, got, want) {
   eq("chain audio url", calls.length === 1 && calls[0].url, "https://cs.test/track.mp3");
 }
 
+// Сценарий 12: гифка из вкладки — пропускаем, закачек нет
+{
+  const { ctx, calls } = makeCtx({ text: () => "<html></html>", tabCands: ["https://x.test/a.gif"] });
+  const r = await vm.runInContext(`resolveDownload("https://vk.ru/audio-1_2", 1, null)`, ctx);
+  eq("chain gif skipped", { ok: r.ok, needPlayback: r.needPlayback }, { ok: false, needPlayback: true });
+  eq("chain gif no downloads", calls.length, 0);
+}
+
 // Сценарий 11: data:-URL из страницы отклоняется, закачек нет
 {
   const { ctx, calls, send } = makeCtx({ text: () => "" });

@@ -150,6 +150,16 @@ eq("safe nonstring", P.isSafeHttpUrl({}), false);
 eq("safe empty", P.isSafeHttpUrl(""), false);
 eq("safe long", P.isSafeHttpUrl("https://x.com/" + "a".repeat(2048)), false);
 
+// isMediaish: медиа да, гифки/картинки нет
+eq("mediaish mp4", P.isMediaish("https://x.com/v.mp4?x=1"), true);
+eq("mediaish mp3", P.isMediaish("https://cs1.vk.ru/a.mp3"), true);
+eq("mediaish cdn", P.isMediaish("https://scontent-hel3-1.cdninstagram.com/v/t50/x"), true);
+eq("mediaish playback", P.isMediaish("https://rr.googlevideo.com/videoplayback?mime=video%2Fmp4"), true);
+eq("mediaish gif no", P.isMediaish("https://x.com/a.gif"), false);
+eq("mediaish png no", P.isMediaish("https://x.com/a.png"), false);
+eq("mediaish js no", P.isMediaish("https://x.com/a.js"), false);
+eq("mediaish page no", P.isMediaish("https://x.com/about"), false);
+
 // аудио: прямые файлы, заголовки, og:audio
 eq("audio mp3", P.isDirectAudio("https://cs1.vk.ru/a.mp3?x=1"), true);
 eq("audio m4a", P.isDirectAudio("https://x.com/a.M4A"), true);

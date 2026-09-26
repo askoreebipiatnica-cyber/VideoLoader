@@ -36,6 +36,16 @@
     return /\.(mp3|m4a|m4b|ogg|oga|opus|wav|flac|aac)(\?|#|$)/i.test(String(url || ""));
   };
 
+  /** Похоже ли на медиа вообще: файл, известный CDN-хост или потоковый URL.
+   *  [SEC-FIX] Режет гифки/картинки/скрипты из DOM до того, как они попадут в захват. */
+  api.isMediaish = function (url) {
+    const u = String(url || "");
+    if (api.isDirectMedia(u) || api.isDirectAudio(u)) return true;
+    if (api.isPlaylist(u, "")) return true;
+    if (/videoplayback|mime=video|mime=audio/i.test(u)) return true;
+    return /cdninstagram|fbcdn|googlevideo|tiktokcdn|tiktokv|vxtiktok|vkuservideo|vkuseraudio|akamaihd/i.test(u);
+  };
+
   /** Это HLS/DASH плейлист. */
   api.isPlaylist = function (url, contentType) {
     const u = String(url || "");

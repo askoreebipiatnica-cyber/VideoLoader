@@ -352,8 +352,10 @@ async function tryCaught(tabId, signal) {
     if (checked >= 3) break;
     checked++;
     const probe = await probeOne(c.url, signal);
-    if (probe === "fragment") { sawFragment = true; continue; }
-    const dl = await doDownload(c.url, c.title || "", probe === "playable" ? undefined : P.extByContentType(""));
+    // [SEC-FIX] Качаем только проверенное цельное. "unknown" (гифки, картинки,
+    // страницы) — пропускаем, а не тащим как раньше.
+    if (probe !== "playable") { if (probe === "fragment") sawFragment = true; continue; }
+    const dl = await doDownload(c.url, c.title || "", undefined);
     return { ...dl, note: "caught" };
   }
   if (sawFragment) return { ok: false, code: "NOFILE" };
@@ -382,7 +384,8 @@ async function askTab(tabId, signal) {
     } catch { return []; }
   }
   for (const u of cands.slice(0, 20)) {
-    if (!u || /^blob:/i.test(u)) continue;
+    // [SEC-FIX] В захват — только похожее на медиа (гифки/картинки мимо).
+    if (typeof u !== "string" || !P.isMediaish(u)) continue;
     const pl = P.isPlaylist(u, "");
     remember(tabId, {
       url: u, kind: pl ? "hls" : "page",
@@ -710,7 +713,8 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             detected.set(tabId, list);
           }
           for (const u of cands) {
-            if (!P.isSafeHttpUrl(u)) continue;
+            // [SEC-FIX] Только медиа: гифки/картинки из ресурсов страницы мимо.
+            if (!P.isSafeHttpUrl(u) || !P.isMediaish(u)) continue;
             const pl = P.isPlaylist(u, "");
             remember(tabId, {
               url: u, kind: pl ? "hls" : "page",

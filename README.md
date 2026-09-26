@@ -4,7 +4,7 @@
 
 > 🧩 **Это расширение для браузера** (Chrome / Edge / Firefox / Opera / Яндекс / Brave / Vivaldi), а не отдельная программа: ставится за минуту, ничего не пишет в систему.
 
-Бесплатное расширение с открытым кодом. Без регистрации, без водяных знаков.
+Бесплатное расширение с открытым кодом. Без регистрации, без водяных знаков. Работает на Windows и macOS.
 
 ![Демо: скачивание рилса за 4 шага](docs/demo.gif)
 
@@ -70,7 +70,7 @@ node test/i18n.mjs   # 23 locale completeness tests
 
 > 🧩 **This is a browser extension** (Chrome / Edge / Firefox / Opera / Yandex / Brave / Vivaldi), not a standalone program: installs in a minute, writes nothing to the system.
 
-Free open-source extension. No sign-up, no watermarks.
+Free open-source extension. No sign-up, no watermarks. Works on Windows and macOS.
 
 ![Demo: downloading a reel in 4 steps](docs/demo.gif)
 

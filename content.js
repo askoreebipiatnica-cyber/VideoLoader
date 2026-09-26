@@ -35,16 +35,24 @@ function scrapeInline() {
   try {
     // 1. video_url из встроенного JSON страницы (там цельный файл)
     const html = document.documentElement.innerHTML || "";
-    const re = /"video_?[Uu]rl"\s*:\s*"((?:[^"\\]|\\.)*)"/g;
+    const reV = /"video_?[Uu]rl"\s*:\s*"((?:[^"\\]|\\.)*)"/g;
+    // 1b. audio_url (Suno и др.): mp3 или настоящий wav как есть
+    const reA = /"audio_?[Uu]rl"\s*:\s*"((?:[^"\\]|\\.)*)"/g;
     let m;
     let n = 0;
-    while ((m = re.exec(html)) !== null && n < 20) {
-      n++;
-      try {
-        const u = JSON.parse('"' + m[1] + '"');
-        if (/\.(mp4|webm|m4v|mov|ogv)(\?|#|$)/i.test(u) || /cdninstagram|fbcdn|googlevideo|tiktokcdn|tiktokv|vxtiktok/i.test(u)) push(u);
-      } catch { /* битый фрагмент — пропускаем */ }
-    }
+    const grab = (re) => {
+      let mm;
+      while ((mm = re.exec(html)) !== null && n < 20) {
+        n++;
+        try {
+          const u = JSON.parse('"' + mm[1] + '"');
+          if (/\.(mp4|webm|m4v|mov|ogv|mp3|m4a|ogg|oga|opus|wav|flac|aac)(\?|#|$)/i.test(u)
+            || /cdninstagram|fbcdn|googlevideo|tiktokcdn|tiktokv|vxtiktok|suno\.ai|audiopipe/i.test(u)) push(u);
+        } catch { /* битый фрагмент — пропускаем */ }
+      }
+    };
+    grab(reV);
+    grab(reA);
     // 2. Ресурсы, которые реально тянул плеер
     try {
       performance.getEntriesByType("resource").forEach((r) => {

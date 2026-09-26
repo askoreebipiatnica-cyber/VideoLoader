@@ -323,7 +323,7 @@ async function probeOne(url, signal) {
     }
     if (!buf.length) return "unknown";
     if (/webm|matroska/.test(ct)) return P.hasEbmlHead(buf) ? "playable" : "fragment";
-    // [AUDIO] Аудио проверяем своим заголовком, а не ftyp.
+    // [AUDIO] Аудио проверяем своим заголовком — в т.ч. когда сервер врёт с Content-Type.
     if (/^audio\//i.test(ct) || P.isDirectAudio(url)) {
       return P.hasAudioHead(buf) ? "playable" : "fragment";
     }
@@ -603,6 +603,17 @@ async function resolveDownload(raw, tabId, signal) {
       stage("DOWNLOAD");
       const dl = await doDownload(u, "");
       return { ...dl, note: "page" };
+    }
+    sawFragment = true;
+  }
+  // Аудио из JSON страницы (audio_url, Suno): mp3 или настоящий wav как есть, без апскейла
+  const au = P.extractAudioUrls(html, url);
+  for (const u of au.slice(0, 3)) {
+    if (signal) signal.throwIfAborted();
+    if ((await probeOne(u, signal)) === "playable") {
+      stage("DOWNLOAD");
+      const dl = await doDownload(u, "");
+      return { ...dl, note: "audio" };
     }
     sawFragment = true;
   }

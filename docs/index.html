@@ -135,7 +135,7 @@ footer a { color: var(--acc); text-decoration: none; }
   <div class="orb a"></div><div class="orb b"></div>
   <div class="badge" data-i="badge">🧩 <b>Расширение для браузера</b> · Chrome · Edge · Firefox · Opera</div>
   <h1><span data-i="h1a">Качай видео</span><br><span class="stroke" data-i="h1b">одной кнопкой</span></h1>
-  <p class="osline"><span data-i="os_pre">Для</span> Windows · macOS · Linux</p>
+  <p class="osline"><span data-i="os_pre">Подходит для</span> <span data-i="os_items">Windows · macOS · Linux</span></p>
   <p class="sub" data-i="sub">Бесплатное расширение с открытым кодом. YouTube, TikTok, Instagram — вставь ссылку, остальное само. Windows и macOS.</p>
   <div class="ctas">
     <a class="btn" href="https://github.com/askoreebipiatnica-cyber/VideoLoader/releases" data-i="dl">Скачать расширение</a>
@@ -156,7 +156,7 @@ footer a { color: var(--acc); text-decoration: none; }
       <div class="feat"><div class="e">🧹</div><h3 data-i="f2h">Без мусора</h3><p data-i="f2p">Фрагменты потока и битые куски отсекаются проверкой. Нет файла — скажет честно.</p></div>
       <div class="feat"><div class="e">⚡</div><h3 data-i="f3h">Авто-сохранение</h3><p data-i="f3p">Смотришь видео — файл падает сам. Анимации и мелочь пропускаются.</p></div>
       <div class="feat"><div class="e">🌍</div><h3 data-i="f4h">6 языков</h3><p data-i="f4p">Русский, English, Deutsch, 中文, қазақша, 한국어. Авто по языку браузера.</p></div>
-      <div class="feat"><div class="e">📜</div><h3 data-i="f5h">Журнал</h3><p data-i="f5p">Последние 7 файлов: показать в папке, удалить с диска, очистить список.</p></div>
+      <div class="feat"><div class="e">🎵</div><h3 data-i="f7h">Suno WAV / MP3</h3><p data-i="f7p">Suno AI: прямая ссылка на трек — качаем WAV/MP3 как есть. og:audio парсится автоматически.</p></div>
       <div class="feat"><div class="e">🖥️</div><h3 data-i="f6h">Локальный помощник</h3><p data-i="f6p">yt-dlp на твоей машине с куками Chrome. Как сайты-качалки, но приватно.</p></div>
     </div>
   </section>
@@ -244,6 +244,8 @@ const T = { en: {
   badge: "🧩 <b>Browser extension</b> · Chrome · Edge · Firefox · Opera",
   h1a: "Download videos", h1b: "in one click",
   os_pre: "For",
+  os_items: "Windows · macOS · Linux",
+  os_items: "Windows · macOS · Linux",
   sub: "Free open-source browser extension. YouTube, TikTok, Instagram — paste a link, the rest is automatic. Windows and macOS.",
   dl: "Download extension", code: "Sources",
   feat_h: "Features", feat_l: "Everything for downloading — nothing extra.",
@@ -253,6 +255,7 @@ const T = { en: {
   f4h: "6 languages", f4p: "Russian, English, Deutsch, 中文, қазақша, 한국어.",
   f5h: "History", f5p: "Last 7 files: show in folder, delete from disk.",
   f6h: "Local helper", f6p: "yt-dlp on your machine with your Chrome cookies. Like downloader sites, but private.",
+  f7h: "Suno WAV / MP3", f7p: "Suno AI: direct track link — download WAV/MP3 as-is. og:audio parsed automatically.",
   demo_h: "How it looks", demo_l: "Link → Download → file in your folder.",
   inst_h: "1-minute install", inst_l: "No sign-up, no build.",
   s1h: "Download", s1p: "ZIP from", s1p2: "and unpack it.",
@@ -278,6 +281,9 @@ document.querySelectorAll(".lang button").forEach((b) => {
       const v = T.en[el.dataset.i];
       if (v !== undefined) { if (el.tagName === "INPUT") el.placeholder = v; else el.innerHTML = v; }
     });
+    // os_items handled separately
+    const osItemsEl = document.querySelector('[data-i="os_items"]');
+    if (osItemsEl) osItemsEl.textContent = T.en.os_items || "Windows · macOS · Linux";
   });
 });
 </script>

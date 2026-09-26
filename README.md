@@ -13,13 +13,14 @@
 
 ## Что умеет
 - 🎯 **Одна строка + «Скачать»** — вставь ссылку на видео, пост, рилс, TikTok, YouTube — или прямую ссылку на музыку (mp3/m4a/ogg).
+- 🎵 **Suno WAV / MP3**: прямая ссылка на трек Suno — качаем WAV/MP3 как есть. og:audio парсится автоматически.
 - 🌍 **6 языков**: русский, English, Deutsch, 中文, қазақша, 한국어 — переключатель в окне, по умолчанию язык браузера.
 - 🧠 **Сам ищет цельный файл**: помощник → прямой MP4 → данные открытой вкладки → `og:video` → `video_url` → Instagram API → TikTok → embed. Мусор не сохраняет — скажет честно.
 - ⚡ **Авто-сохранение** (по умолчанию выкл): смотришь видео — файл сам падает в загрузки. Мелочь и анимации пропускаются.
 - 🛑 **Стоп** в любой момент, закрытие окна закачку не прерывает.
 - 📜 **Журнал**: последние 7 файлов, «Показать» открывает в папке, ✕ удаляет с диска.
 - 🌗 Светлая / тёмная / как в системе, стекло в духе macOS.
-- 🖥️ **Локальный помощник** (yt-dlp): Windows — `helper\run-helper.bat`, macOS/Linux — `helper\run-helper.sh` (нужны node и yt-dlp в PATH). Подробности ниже.
+- 🖥️ **Локальный помощник** (yt-dlp): Windows — `helper\run-helper.bat`, macOS/Linux — `helper/run-helper.sh` (нужны node и yt-dlp в PATH). Подробности ниже.
 - 🧩 **Браузеры**: Chrome, Edge, Brave, Vivaldi, Opera, Яндекс, Firefox (MV3). **ОС**: Windows, macOS, Linux.
 
 ## Установка за 1 минуту
@@ -79,13 +80,14 @@ If the extension saves you time — [support development ♥](https://pay.cloudt
 
 ## Features
 - 🎯 **One input + “Download”** — paste a video, post, reel, TikTok or YouTube link — or a direct music link (mp3/m4a/ogg).
+- 🎵 **Suno WAV / MP3**: direct Suno track link — downloads WAV/MP3 as-is. og:audio parsed automatically.
 - 🌍 **6 languages**: русский, English, Deutsch, 中文, қазақша, 한국어 — switcher in the popup, browser language by default.
 - 🧠 **Finds the whole file itself**: helper → direct MP4 → open tab data → `og:video` → `video_url` → Instagram API → TikTok → embed. Junk is never saved — it tells you straight.
 - ⚡ **Auto-save** (off by default): watch a video — the file saves itself. Trivia and animations are skipped.
 - 🛑 **Stop** anytime, closing the popup never interrupts a download.
 - 📜 **History**: last 7 files, “Show” opens the folder, ✕ deletes from disk.
 - 🌗 Light / dark / system, macOS-style glass.
-- 🖥️ **Local helper** (yt-dlp): Windows — `helper\run-helper.bat`, macOS/Linux — `helper\run-helper.sh` (needs node and yt-dlp in PATH). Details below.
+- 🖥️ **Local helper** (yt-dlp): Windows — `helper\run-helper.bat`, macOS/Linux — `helper/run-helper.sh` (needs node and yt-dlp in PATH). Details below.
 - 🧩 **Browsers**: Chrome, Edge, Brave, Vivaldi, Opera, Yandex, Firefox (MV3). **OS**: Windows, macOS, Linux.
 
 ## 1-minute install

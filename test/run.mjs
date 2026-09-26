@@ -176,6 +176,11 @@ eq("audio ext ogg", P.extByContentType("audio/ogg"), ".ogg");
 eq("audio ext m4a", P.extByContentType("audio/mp4"), ".m4a");
 eq("video ogg stays ogv", P.extByContentType("video/ogg"), ".ogv");
 eq("og audio meta", P.extractFromHtml(`<meta property="og:audio" content="https://cs.test/a.mp3">`, "https://vk.ru/"), ["https://cs.test/a.mp3"]);
+eq("sun audio_url", P.extractAudioUrls(`{"audio_url":"https:\\/\\/cdn1.suno.ai\\/t.wav"}`, "https://suno.com/"), ["https://cdn1.suno.ai/t.wav"]);
+eq("sun audio_url mp3", P.extractAudioUrls(`{"audio_url":"https://cdn1.suno.ai/t.mp3?x=1"}`, "https://suno.com/"), ["https://cdn1.suno.ai/t.mp3?x=1"]);
+eq("sun audio_url dup", P.extractAudioUrls(`{"audio_url":"https://a.com/x.mp3"}{"audio_url":"https://a.com/x.mp3"}`, "https://s.com/"), ["https://a.com/x.mp3"]);
+eq("sun audio_url junk", P.extractAudioUrls(`{"audio_url":"notaurl"}`, "https://s.com/"), []);
+eq("sun audio_url none", P.extractAudioUrls("<html></html>", "https://s.com/"), []);
 
 // manifest валиден
 const mf = JSON.parse(readFileSync(new URL("../manifest.json", import.meta.url), "utf8"));

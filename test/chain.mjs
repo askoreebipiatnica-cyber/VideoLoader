@@ -10,6 +10,7 @@ const MOOF = [0, 0, 0, 16, 109, 111, 111, 102];
 const FULL = [...FTYP, 0, 0, 0, 32, 109, 100, 97, 116, 1, 2, 3, 4]; // ftyp + mdat
 const INIT = [...FTYP, 0, 0, 0, 12, 109, 111, 111, 118]; // ftyp + moov, без медиа (как твой 818-байтный файл)
 const ID3 = [0x49, 0x44, 0x33, 4, 0, 0, 0, 0]; // mp3-заголовок
+const RIFF = [0x52, 0x49, 0x46, 0x46, 0, 0, 0, 0]; // wav-заголовок
 
 const IG_HTML =
   `<html><head><meta property="og:video" content="https://cdn.test/frag.mp4"></head>` +
@@ -59,6 +60,7 @@ function makeFetch(routes) {
     if (u.includes("init.mp4")) return bytes(INIT, "video/mp4", 818);
     if (u.includes("full.mp4")) return bytes(FULL, "video/mp4", 5000000);
     if (u.includes("track.mp3")) return bytes(ID3, "audio/mpeg", 4000000);
+    if (u.includes("song.wav")) return bytes(RIFF, "audio/wav", 30000000);
     if (u.includes("/api/v1/media/") || u.includes("/api/graphql")) {
       if (!routes.api) throw new Error("ig api blocked");
       const j = JSON.stringify({ items: [{ video_versions: [{ url: "https://cdn.test/full.mp4", width: 720 }] }] });
@@ -238,6 +240,16 @@ function eq(name, got, want) {
   const r = await vm.runInContext(`resolveDownload("https://music.example/track-2", 1, null)`, ctx);
   eq("chain gif skipped", { ok: r.ok, needPlayback: r.needPlayback }, { ok: false, needPlayback: true });
   eq("chain gif no downloads", calls.length, 0);
+}
+
+// Сценарий 13: audio_url c wav (Suno) — качаем как есть, note audio
+{
+  const html = `<html><body><script>{"audio_url":"https:\\/\\/cdn1.suno.ai\\/song.wav"}</script></body></html>`;
+  const { ctx, calls } = makeCtx({ text: () => html });
+  const r = await vm.runInContext(`resolveDownload("https://suno.com/song/abc123", 1, null)`, ctx);
+  eq("chain suno ok", { ok: r.ok, note: r.note }, { ok: true, note: "audio" });
+  eq("chain suno url", calls.length === 1 && calls[0].url, "https://cdn1.suno.ai/song.wav");
+  eq("chain suno filename", calls.length === 1 && calls[0].filename.endsWith(".wav"), true);
 }
 
 // Сценарий 11: data:-URL из страницы отклоняется, закачек нет

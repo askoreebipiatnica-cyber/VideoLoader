@@ -177,6 +177,32 @@
     }
     return out;
   };
+  /** Прямые audio_url из JSON страницы (Suno и др.): mp3 или настоящий wav как есть. */
+  api.extractAudioUrls = function (html, base) {
+    const out = [];
+    const seen = new Set();
+    const push = (u) => {
+      if (!u || seen.has(u)) return;
+      if (!/^https?:\/\//i.test(u)) return;
+      if (!/\.(mp3|m4a|m4b|ogg|oga|opus|wav|flac|aac)(\?|#|$)/i.test(u)
+        && !/suno\.ai|audiopipe|cdninstagram|fbcdn|googlevideo|tiktokcdn/i.test(u)) return;
+      seen.add(u);
+      out.push(u);
+    };
+    const re = /"audio_?[Uu]rl"\s*:\s*"((?:[^"\\]|\\.)*)"/g;
+    let m;
+    while ((m = re.exec(html)) !== null) {
+      try {
+        let u = JSON.parse('"' + m[1] + '"');
+        if (u.startsWith("/")) {
+          try { u = new URL(u, base).toString(); } catch { continue; }
+        }
+        push(u);
+      } catch { /* битый фрагмент — пропускаем */ }
+    }
+    return out;
+  };
+
   /** Первые байты — начало цельного MP4 ('ftyp')? Фрагменты ('moof'/'sidx') VLC не открывает. */
   api.hasFtypMp4 = function (bytes) {
     const b = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes || []);

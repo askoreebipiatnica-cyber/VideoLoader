@@ -9,6 +9,7 @@ const FTYP = [0, 0, 0, 24, 102, 116, 121, 112];
 const MOOF = [0, 0, 0, 16, 109, 111, 111, 102];
 const FULL = [...FTYP, 0, 0, 0, 32, 109, 100, 97, 116, 1, 2, 3, 4]; // ftyp + mdat
 const INIT = [...FTYP, 0, 0, 0, 12, 109, 111, 111, 118]; // ftyp + moov, без медиа (как твой 818-байтный файл)
+const ID3 = [0x49, 0x44, 0x33, 4, 0, 0, 0, 0]; // mp3-заголовок
 
 const IG_HTML =
   `<html><head><meta property="og:video" content="https://cdn.test/frag.mp4"></head>` +
@@ -57,6 +58,7 @@ function makeFetch(routes) {
     if (u.includes("frag.mp4")) return bytes(MOOF, "video/mp4", 19263);
     if (u.includes("init.mp4")) return bytes(INIT, "video/mp4", 818);
     if (u.includes("full.mp4")) return bytes(FULL, "video/mp4", 5000000);
+    if (u.includes("track.mp3")) return bytes(ID3, "audio/mpeg", 4000000);
     if (u.includes("/api/v1/media/") || u.includes("/api/graphql")) {
       if (!routes.api) throw new Error("ig api blocked");
       const j = JSON.stringify({ items: [{ video_versions: [{ url: "https://cdn.test/full.mp4", width: 720 }] }] });
@@ -219,6 +221,15 @@ function eq(name, got, want) {
   const r = await vm.runInContext(`resolveDownload("https://www.instagram.com/reel/ABC123/", 1, null)`, ctx);
   eq("chain ig-api ok", { ok: r.ok, note: r.note }, { ok: true, note: "api" });
   eq("chain ig-api url", calls.length === 1 && calls[0].url, "https://cdn.test/full.mp4");
+}
+
+// Сценарий 11: og:audio (музыка VK) — качаем mp3
+{
+  const html = `<html><head><meta property="og:audio" content="https://cs.test/track.mp3"></head></html>`;
+  const { ctx, calls } = makeCtx({ text: () => html });
+  const r = await vm.runInContext(`resolveDownload("https://vk.ru/audio-2001997256_148997256", 1, null)`, ctx);
+  eq("chain audio ok", { ok: r.ok, note: r.note }, { ok: true, note: "og:video" });
+  eq("chain audio url", calls.length === 1 && calls[0].url, "https://cs.test/track.mp3");
 }
 
 // Сценарий 11: data:-URL из страницы отклоняется, закачек нет

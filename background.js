@@ -48,6 +48,13 @@ chrome.webRequest.onResponseStarted.addListener(
         size: P.humanSize(len), bytes, title: "",
       });
     }
+    // [AUDIO] Музыка (VK и др.): audio/* и прямые аудиофайлы ловим так же.
+    if (/^audio\//i.test(ct) || P.isDirectAudio(url)) {
+      remember(details.tabId, {
+        url, kind: "file", label: "MP3",
+        size: P.humanSize(len), bytes, title: "",
+      });
+    }
   },
   { urls: ["<all_urls>"] },
   ["responseHeaders"]
@@ -155,7 +162,7 @@ async function doDownload(url, title, extHint) {
   try {
     const u = new URL(url);
     const last = u.pathname.split("/").pop() || "";
-    const m = last.match(/\.(mp4|webm|mov|ogv)$/i);
+    const m = last.match(/\.(mp4|webm|mov|ogv|mp3|m4a|m4b|ogg|oga|opus|wav|flac|aac)$/i);
     if (m) filename = filename.replace(/\.[a-z0-9]{2,5}$/i, "") + m[0].toLowerCase();
   } catch { /* fallback уже есть */ }
   const id = await chrome.downloads.download({ url, filename, conflictAction: "uniquify", saveAs: false });
@@ -316,6 +323,10 @@ async function probeOne(url, signal) {
     }
     if (!buf.length) return "unknown";
     if (/webm|matroska/.test(ct)) return P.hasEbmlHead(buf) ? "playable" : "fragment";
+    // [AUDIO] Аудио проверяем своим заголовком, а не ftyp.
+    if (/^audio\//i.test(ct) || P.isDirectAudio(url)) {
+      return P.hasAudioHead(buf) ? "playable" : "fragment";
+    }
     if (/video\//.test(ct) || !ct || /mp4|quicktime|octet-stream/.test(ct)) {
       return P.checkMp4Head(buf, total) ? "playable" : "fragment";
     }
@@ -511,7 +522,9 @@ async function resolveDownload(raw, tabId, signal) {
 
   stage("OPEN_LINK");
   const ct = await headContentType(url, signal);
-  if (/^video\//i.test(ct) || (P.isDirectMedia(url) && !P.isPlaylist(url, ct))) {
+  // [AUDIO] Прямые аудиофайлы идут тем же путём, что видео.
+  const isAudio = /^audio\//i.test(ct) || P.isDirectAudio(url);
+  if (/^video\//i.test(ct) || isAudio || (P.isDirectMedia(url) && !P.isPlaylist(url, ct))) {
     stage("DOWNLOAD");
     if ((await probeOne(url, signal)) === "fragment") {
       return { ok: false, code: "NOFILE" };

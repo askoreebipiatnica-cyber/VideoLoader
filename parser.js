@@ -31,6 +31,11 @@
     return /\.(mp4|webm|m4v|mov|ogv)(\?|#|$)/i.test(String(url || ""));
   };
 
+  /** Похоже ли на прямой аудиофайл (музыка VK и др.). */
+  api.isDirectAudio = function (url) {
+    return /\.(mp3|m4a|m4b|ogg|oga|opus|wav|flac|aac)(\?|#|$)/i.test(String(url || ""));
+  };
+
   /** Это HLS/DASH плейлист. */
   api.isPlaylist = function (url, contentType) {
     const u = String(url || "");
@@ -55,7 +60,8 @@
       const content = (m.match(/content=["']([^"']+)["']/i) || [])[1] || "";
       if (!content) continue;
       const p = prop.toLowerCase();
-      if (p === "og:video:secure_url" || p === "og:video:url" || p === "og:video" || p === "twitter:player:stream") {
+      if (p === "og:video:secure_url" || p === "og:video:url" || p === "og:video" || p === "twitter:player:stream"
+        || p === "og:audio:secure_url" || p === "og:audio:url" || p === "og:audio") {
         if (/^https?:\/\//i.test(content) || content.startsWith("/")) push(content);
       }
     }
@@ -109,9 +115,17 @@
     return base;
   };
 
-  /** Расширение по Content-Type. */
+  /** Расширение по Content-Type: аудио и видео разводим явно. */
   api.extByContentType = function (ct) {
     const c = String(ct || "").toLowerCase();
+    if (c.includes("audio/")) {
+      if (c.includes("ogg") || c.includes("opus")) return ".ogg";
+      if (c.includes("wav") || c.includes("wave")) return ".wav";
+      if (c.includes("flac")) return ".flac";
+      if (c.includes("aac")) return ".aac";
+      if (c.includes("mp4") || c.includes("m4a")) return ".m4a";
+      return ".mp3";
+    }
     if (c.includes("webm")) return ".webm";
     if (c.includes("quicktime")) return ".mov";
     if (c.includes("ogg")) return ".ogv";
@@ -177,6 +191,18 @@
     const arr = Array.isArray(list) ? list.slice() : [];
     const out = [entry, ...arr.filter((x) => x && x.downloadId !== entry.downloadId)];
     return out.slice(0, 7);
+  };
+
+  /** Начало аудиофайла: ID3 / OggS / fLaC / RIFF-WAVE / MPEG-sync / m4a-ftyp. */
+  api.hasAudioHead = function (bytes) {
+    const b = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes || []);
+    if (b.length < 4) return false;
+    if (b[0] === 0x49 && b[1] === 0x44 && b[2] === 0x33) return true; // "ID3"
+    if (b[0] === 0x4f && b[1] === 0x67 && b[2] === 0x67 && b[3] === 0x53) return true; // "OggS"
+    if (b[0] === 0x66 && b[1] === 0x4c && b[2] === 0x61 && b[3] === 0x43) return true; // "fLaC"
+    if (b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46) return true; // "RIFF"
+    if (b[0] === 0xff && (b[1] & 0xe0) === 0xe0) return true; // MPEG frame sync
+    return api.hasFtypMp4(b); // m4a
   };
 
   /** Начало WebM/Matroska (EBML magic). */

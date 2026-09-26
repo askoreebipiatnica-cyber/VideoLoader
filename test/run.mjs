@@ -150,6 +150,22 @@ eq("safe nonstring", P.isSafeHttpUrl({}), false);
 eq("safe empty", P.isSafeHttpUrl(""), false);
 eq("safe long", P.isSafeHttpUrl("https://x.com/" + "a".repeat(2048)), false);
 
+// аудио: прямые файлы, заголовки, og:audio
+eq("audio mp3", P.isDirectAudio("https://cs1.vk.ru/a.mp3?x=1"), true);
+eq("audio m4a", P.isDirectAudio("https://x.com/a.M4A"), true);
+eq("audio no", P.isDirectAudio("https://x.com/v.mp4"), false);
+eq("audio head id3", P.hasAudioHead(new Uint8Array([0x49, 0x44, 0x33, 4, 0])), true);
+eq("audio head ogg", P.hasAudioHead(new Uint8Array([0x4f, 0x67, 0x67, 0x53])), true);
+eq("audio head flac", P.hasAudioHead(new Uint8Array([0x66, 0x4c, 0x61, 0x43])), true);
+eq("audio head riff", P.hasAudioHead(new Uint8Array([0x52, 0x49, 0x46, 0x46])), true);
+eq("audio head mpeg", P.hasAudioHead(new Uint8Array([0xff, 0xfb, 0x90, 0x00])), true);
+eq("audio head junk", P.hasAudioHead(new Uint8Array([1, 2, 3, 4])), false);
+eq("audio ext mp3", P.extByContentType("audio/mpeg"), ".mp3");
+eq("audio ext ogg", P.extByContentType("audio/ogg"), ".ogg");
+eq("audio ext m4a", P.extByContentType("audio/mp4"), ".m4a");
+eq("video ogg stays ogv", P.extByContentType("video/ogg"), ".ogv");
+eq("og audio meta", P.extractFromHtml(`<meta property="og:audio" content="https://cs1.vk.ru/a.mp3">`, "https://vk.ru/"), ["https://cs1.vk.ru/a.mp3"]);
+
 // manifest валиден
 const mf = JSON.parse(readFileSync(new URL("../manifest.json", import.meta.url), "utf8"));
 eq("manifest v3", mf.manifest_version, 3);

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>LayoutFix</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body { width: 300px; margin: 0; padding: 14px; font: 13px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .logo { width: 28px; height: 28px; }
+    h1 { font-size: 15px; margin: 0; }
+    .sub { opacity: .6; font-size: 11px; }
+    .row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-top: 1px solid rgba(128,128,128,.25); }
+    .row:first-of-type { border-top: 0; }
+    label { user-select: none; }
+    .switch { position: relative; width: 36px; height: 20px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; inset: 0; border-radius: 999px; background: rgba(128,128,128,.4); transition: .15s; }
+    .slider::before { content: ""; position: absolute; width: 14px; height: 14px; border-radius: 50%; top: 3px; left: 3px; background: #fff; transition: .15s; }
+    input:checked + .slider { background: #2e7d32; }
+    input:checked + .slider::before { transform: translateX(16px); }
+    button { margin-top: 10px; width: 100%; padding: 8px; border: 1px solid rgba(128,128,128,.4); border-radius: 8px; background: transparent; color: inherit; cursor: pointer; font: inherit; }
+    button:hover { background: rgba(128,128,128,.12); }
+    .hint { margin-top: 10px; font-size: 11px; opacity: .65; }
+    kbd { border: 1px solid rgba(128,128,128,.4); border-radius: 4px; padding: 0 4px; font: 11px ui-monospace, monospace; }
+  </style>
+</head>
+<body>
+  <header>
+    <img class="logo" src="../../icons/icon48.png" alt="">
+    <div>
+      <h1>LayoutFix</h1>
+      <div class="sub">всё локально · ноль телеметрии</div>
+    </div>
+  </header>
+
+  <div class="row">
+    <label for="enabled">Включено</label>
+    <span class="switch"><input type="checkbox" id="enabled"><span class="slider"></span></span>
+  </div>
+  <div class="row">
+    <label for="autoFix">Автоисправление</label>
+    <span class="switch"><input type="checkbox" id="autoFix"><span class="slider"></span></span>
+  </div>
+  <div class="row">
+    <label for="fixCaps">Чинить CapsLock</label>
+    <span class="switch"><input type="checkbox" id="fixCaps"><span class="slider"></span></span>
+  </div>
+
+  <button id="openOptions">Настройки</button>
+
+  <p class="hint">Ручное исправление: <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>X</kbd> — последнее слово или выделение.</p>
+
+  <script src="popup.js"></script>
+</body>
+</html>

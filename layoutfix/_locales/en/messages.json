@@ -1,0 +1,11 @@
+{
+  "extName": {
+    "message": "LayoutFix — keyboard layout switcher"
+  },
+  "extDescription": {
+    "message": "Automatically fixes text typed in the wrong keyboard layout. 12 languages, fully local, zero telemetry."
+  },
+  "cmdConvert": {
+    "message": "Fix last word or selection"
+  }
+}

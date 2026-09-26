@@ -1,0 +1,19 @@
+{
+  "name": "layoutfix",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "LayoutFix — cross-browser keyboard layout switcher (Punto-like), Manifest V3, zero telemetry.",
+  "scripts": {
+    "check": "node tools/check-syntax.mjs",
+    "test": "node test/run.mjs",
+    "icons": "node tools/make-icons.mjs",
+    "build:dicts": "node tools/build-dicts.mjs",
+    "validate": "node tools/validate-manifest.mjs && node tools/validate-manifest.mjs --firefox",
+    "package": "node tools/package.mjs",
+    "build": "node test/run.mjs && node tools/check-syntax.mjs && node tools/validate-manifest.mjs && node tools/validate-manifest.mjs --firefox && node tools/package.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

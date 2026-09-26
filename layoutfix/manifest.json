@@ -1,0 +1,65 @@
+{
+  "manifest_version": 3,
+  "name": "__MSG_extName__",
+  "short_name": "LayoutFix",
+  "version": "1.0.0",
+  "description": "__MSG_extDescription__",
+  "default_locale": "ru",
+  "author": "LayoutFix contributors",
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "permissions": ["storage"],
+  "background": {
+    "service_worker": "src/background/service-worker.js"
+  },
+  "action": {
+    "default_title": "__MSG_extName__",
+    "default_popup": "src/ui/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png"
+    }
+  },
+  "options_ui": {
+    "page": "src/ui/options.html",
+    "open_in_tab": true
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": [
+        "src/core/namespace.js",
+        "src/core/settings.js",
+        "src/core/layouts.js",
+        "src/core/converter.js",
+        "src/core/trie.js",
+        "src/core/heuristics.js",
+        "src/core/ringbuffer.js",
+        "src/core/guard.js",
+        "src/dictionaries/packed-dicts.js",
+        "src/dictionaries/dict-data.js",
+        "src/core/engine.js",
+        "src/content/editable.js",
+        "src/content/replace.js",
+        "src/content/controller.js",
+        "src/content/index.js"
+      ],
+      "run_at": "document_start",
+      "all_frames": true,
+      "match_about_blank": true
+    }
+  ],
+  "commands": {
+    "convert-last": {
+      "suggested_key": { "default": "Alt+Shift+X" },
+      "description": "__MSG_cmdConvert__"
+    }
+  },
+  "content_security_policy": {
+    "extension_pages": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; media-src 'none'; connect-src 'none'; object-src 'none'; frame-src 'none'; worker-src 'none'; form-action 'none'; base-uri 'none'"
+  }
+}

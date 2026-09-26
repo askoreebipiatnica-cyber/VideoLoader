@@ -501,6 +501,27 @@ async function igApiDownload(shortcode, pageUrl, signal) {
   return null;
 }
 
+/** Вкладка с нужной страницей: ссылка вставлена из другого места, а трек открыт рядом.
+ *  Ищем таб по хосту (+ shortcode для IG), спрашиваем его вместо активного. */
+async function findTabForUrl(url) {
+  try {
+    let host = "";
+    try { host = new URL(url).hostname.replace(/^(www|m|mobile)\./i, ""); } catch { return null; }
+    if (!host) return null;
+    const short = P.instagramShortcode(url) || "";
+    const tabs = await chrome.tabs.query({});
+    for (const t of tabs || []) {
+      if (!t || typeof t.url !== "string") continue;
+      let th = "";
+      try { th = new URL(t.url).hostname.replace(/^(www|m|mobile)\./i, ""); } catch { continue; }
+      if (th !== host && !th.endsWith("." + host) && !host.endsWith("." + th)) continue;
+      if (short && !t.url.includes(short)) continue;
+      if (typeof t.id === "number") return t.id;
+    }
+  } catch { /* нет доступа к вкладкам — дальше как было */ }
+  return null;
+}
+
 /** Вставленная ссылка -> помощник -> прямой файл / вкладка / og:video / video_url / TikTok / YouTube. */
 async function resolveDownload(raw, tabId, signal) {
   const stage = (s) => { if (active) active.label = s; };
@@ -522,6 +543,8 @@ async function resolveDownload(raw, tabId, signal) {
     }
   }
   const helperFail = () => ({ ok: false, code: "HELPER_FAIL", detail: helperError });
+  // Вкладка с этой страницей (трек может быть открыт рядом, а не активен).
+  const pageTab = (await findTabForUrl(url)) ?? tabId;
 
   stage("OPEN_LINK");
   const ct = await headContentType(url, signal);
@@ -545,9 +568,9 @@ async function resolveDownload(raw, tabId, signal) {
     html = t.slice(0, 2_000_000);
   } catch (e) {
     if (signal && signal.aborted) throw signal.reason;
-    // Фоновая загрузка не прошла — спрашиваем саму вкладку (там вход уже есть)
+    // Фоновая загрузка не прошла — спрашиваем вкладку со страницей (там вход уже есть)
     stage("ASK_TAB");
-    const tabUrls = await askTab(tabId, signal);
+    const tabUrls = await askTab(pageTab, signal);
     for (const u of tabUrls.slice(0, 5)) {
       if (signal) signal.throwIfAborted();
       if ((await probeOne(u, signal)) === "playable") {
@@ -556,7 +579,7 @@ async function resolveDownload(raw, tabId, signal) {
         return { ...dl, note: "tab" };
       }
     }
-    const caught = await tryCaught(tabId, signal);
+    const caught = await tryCaught(pageTab ?? tabId, signal);
     if (caught) return caught;
     return { ok: false, code: "SITE_TIMEOUT" };
   }
@@ -627,9 +650,9 @@ async function resolveDownload(raw, tabId, signal) {
       return { ...dl, note: "youtube" };
     }
   }
-  // Последний шанс: спросить саму вкладку (залогиненный DOM видит больше фонового запроса)
+  // Последний шанс: спросить вкладку с этой страницей (может быть неактивной)
   stage("ASK_TAB");
-  const tabUrls = await askTab(tabId, signal);
+  const tabUrls = await askTab(pageTab, signal);
   for (const u of tabUrls.slice(0, 5)) {
     if (signal) signal.throwIfAborted();
     if ((await probeOne(u, signal)) === "playable") {
@@ -638,7 +661,7 @@ async function resolveDownload(raw, tabId, signal) {
       return { ...dl, note: "tab" };
     }
   }
-  const caught = await tryCaught(tabId, signal);
+  const caught = await tryCaught(pageTab ?? tabId, signal);
   if (caught) return caught;
   if (helperError) return helperFail();
   return sawFragment ? noFile() : { ok: false, needPlayback: true };

@@ -57,7 +57,8 @@ function scrapeInline() {
 }
 
 function videoState() {
-  const v = document.querySelector("video");
+  // [AUDIO] Музыка играет через <audio>, не <video> — смотрим оба.
+  const v = document.querySelector("video") || document.querySelector("audio");
   if (!v) return null;
   return { paused: v.paused, time: v.currentTime || 0, duration: v.duration || 0 };
 }
@@ -87,7 +88,8 @@ function reportPlayback() {
 document.addEventListener(
   "play",
   (e) => {
-    if (e.target && e.target.tagName === "VIDEO") setTimeout(reportPlayback, 1500);
+    // [AUDIO] Ловим play и у <audio> (музыка VK), не только <video>.
+    if (e.target && (e.target.tagName === "VIDEO" || e.target.tagName === "AUDIO")) setTimeout(reportPlayback, 1500);
   },
   true
 );

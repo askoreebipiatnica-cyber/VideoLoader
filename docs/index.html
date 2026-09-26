@@ -50,6 +50,7 @@ nav.scrolled { background: rgba(10,10,18,.8); backdrop-filter: blur(18px); -webk
 .hero h1 { font-size: clamp(38px, 7vw, 76px); line-height: 1.02; letter-spacing: -.03em; margin: 0 0 8px; font-weight: 800; }
 .hero h1 .stroke { color: transparent; -webkit-text-stroke: 1.5px var(--ink); }
 .hero p.sub { color: var(--dim); font-size: clamp(16px, 2.4vw, 20px); max-width: 640px; margin: 14px auto 28px; }
+.osline { color: var(--dim); font-size: 14px; font-family: var(--mono); margin: -4px 0 22px; letter-spacing: .04em; }
 .ctas { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; position: relative; }
 .chips { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 26px; position: relative; }
 .chips span { font-size: 12px; font-family: var(--mono); color: var(--dim); border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; background: rgba(255,255,255,.03); }
@@ -134,6 +135,7 @@ footer a { color: var(--acc); text-decoration: none; }
   <div class="orb a"></div><div class="orb b"></div>
   <div class="badge" data-i="badge">🧩 <b>Расширение для браузера</b> · Chrome · Edge · Firefox · Opera</div>
   <h1><span data-i="h1a">Качай видео</span><br><span class="stroke" data-i="h1b">одной кнопкой</span></h1>
+  <p class="osline"><span data-i="os_pre">Для</span> Windows · macOS · Linux</p>
   <p class="sub" data-i="sub">Бесплатное расширение с открытым кодом. YouTube, TikTok, Instagram — вставь ссылку, остальное само. Windows и macOS.</p>
   <div class="ctas">
     <a class="btn" href="https://github.com/askoreebipiatnica-cyber/VideoLoader/releases" data-i="dl">Скачать расширение</a>
@@ -162,7 +164,7 @@ footer a { color: var(--acc); text-decoration: none; }
   <section class="sec reveal" id="demo">
     <h2 data-i="demo_h">Как это выглядит</h2>
     <p class="lede" data-i="demo_l">Ссылка → «Скачать» → файл в загрузках.</p>
-    <div class="demo"><img src="demo.gif" alt="VideoLoader demo"></div>
+    <div class="demo"><img id="demogif" src="demo.gif" alt="VideoLoader demo"></div>
   </section>
 
   <section class="sec reveal" id="inst">
@@ -241,6 +243,7 @@ const T = { en: {
   n_feat: "Features", n_demo: "Demo", n_inst: "Install", n_faq: "FAQ", n_dl: "Download",
   badge: "🧩 <b>Browser extension</b> · Chrome · Edge · Firefox · Opera",
   h1a: "Download videos", h1b: "in one click",
+  os_pre: "For",
   sub: "Free open-source browser extension. YouTube, TikTok, Instagram — paste a link, the rest is automatic. Windows and macOS.",
   dl: "Download extension", code: "Sources",
   feat_h: "Features", feat_l: "Everything for downloading — nothing extra.",
@@ -269,6 +272,7 @@ document.querySelectorAll(".lang button").forEach((b) => {
   b.addEventListener("click", () => {
     document.querySelectorAll(".lang button").forEach((x) => x.classList.toggle("on", x === b));
     document.documentElement.lang = b.dataset.l;
+    document.getElementById("demogif").src = b.dataset.l === "en" ? "demo-en.gif" : "demo.gif";
     if (b.dataset.l === "ru") { location.reload(); return; }
     document.querySelectorAll("[data-i]").forEach((el) => {
       const v = T.en[el.dataset.i];

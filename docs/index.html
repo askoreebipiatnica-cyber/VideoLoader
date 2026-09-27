@@ -241,51 +241,84 @@ const items = ["YouTube", "TikTok", "Instagram", "Reels", "6 языков", "А�
 const half = items.map((s) => `<span>◆ <b>${s}</b></span>`).join("");
 document.getElementById("mq").innerHTML = half + half;
 // RU/EN
-const T = { en: {
-  n_feat: "Features", n_demo: "Demo", n_inst: "Install", n_faq: "FAQ", n_dl: "Download",
-  badge: "🧩 <b>Browser extension</b> · Chrome · Edge · Firefox · Opera",
-  h1a: "Download videos", h1b: "in one click",
-  os_pre: "For",
-  os_items: "Windows · macOS · Linux",
-  os_items: "Windows · macOS · Linux",
-  sub: "Free open-source browser extension. YouTube, TikTok, Instagram — paste a link, the rest is automatic. Windows and macOS.",
-  dl: "Download extension", code: "Sources",
-  feat_h: "Features", feat_l: "Everything for downloading — nothing extra.",
-  f1h: "One input", f1p: "Paste a video, post or reel link. The extension finds the whole file itself.",
-  f2h: "No junk", f2p: "Stream fragments and broken chunks are filtered out. No file — it says so.",
-  f3h: "Auto-save", f3p: "Watch a video — the file saves itself. Trivia is skipped.",
-  f4h: "6 languages", f4p: "Russian, English, Deutsch, 中文, қазақша, 한국어.",
-  f5h: "History", f5p: "Last 7 files: show in folder, delete from disk.",
-  f6h: "Local helper", f6p: "yt-dlp on your machine with your Chrome cookies. Like downloader sites, but private.",
-  f7h: "Suno WAV / MP3", f7p: "Suno AI: direct track link — download WAV/MP3 as-is. og:audio parsed automatically.",
-  demo_h: "How it looks", demo_l: "Link → Download → file in your folder.",
-  inst_h: "1-minute install", inst_l: "No sign-up, no build.",
-  s1h: "Download", s1p: "ZIP from", s1p2: "and unpack it.",
-  s2h: "Developer mode", s2p: "toggle it on.",
-  s3h: "Load", s3p: "“Load unpacked” → the videoloader folder.",
-  s4h: "Pin it", s4p: "Pin the icon — and download. Firefox: about:debugging → temporary add-on.",
-  st1: "languages", st2: "auto tests", st3: "browsers", st4: "open source",
-  faq_h: "Questions", faq_l: "Briefly, the essentials.",
-  q1: "Is it really an extension, not a program?", a1: "Really an extension: installs in the browser in a minute, writes nothing to the system, removes in two clicks.",
-  q2: "Why “no whole file found” sometimes?", a2: "The site serves stream fragments only. The extension won't push junk — enable auto-save or try another post.",
-  q3: "Do my links and cookies go anywhere?", a3: "No. Everything runs locally in your browser; the helper spins on 127.0.0.1. Sources are open — check yourself.",
-  q4: "What is the helper and why?", a4: "Local yt-dlp with your Chrome cookies — grabs what the page won't give. Without it, the built-in chain still works.",
-  c1: "Install the extension", c2: "and download.", c3: "A minute to install — and any reel is yours.",
-  dl2: "Download extension", don: "support"
-} };
+const T = {
+  ru: {
+    n_feat: "Возможности", n_demo: "Демо", n_inst: "Установка", n_faq: "FAQ", n_dl: "Скачать",
+    badge: "🧩 <b>Расширение для браузера</b> · Chrome · Edge · Firefox · Opera",
+    h1a: "Качай видео", h1b: "одной кнопкой",
+    os_pre: "Подходит для",
+    os_items: "Windows · macOS · Linux",
+    sub: "Бесплатное расширение с открытым кодом. YouTube, TikTok, Instagram — вставь ссылку, остальное само. Windows и macOS.",
+    dl: "Скачать расширение", code: "Исходники",
+    feat_h: "Возможности", feat_l: "Всё для скачивания — и ничего лишнего.",
+    f1h: "Одна строка", f1p: "Вставь ссылку на видео, пост или рилс. Расширение само находит цельный файл: помощник, вкладка, страница, Instagram API.",
+    f2h: "Без мусора", f2p: "Фрагменты потока и битые куски отсекаются проверкой. Нет файла — скажет честно.",
+    f3h: "Авто-сохранение", f3p: "Смотришь видео — файл падает сам. Анимации и мелочь пропускаются.",
+    f4h: "6 языков", f4p: "Русский, English, Deutsch, 中文, қазақша, 한국어.",
+    f5h: "Журнал", f5p: "Последние 7 файлов: показать в папке, удалить с диска.",
+    f6h: "Локальный помощник", f6p: "yt-dlp на твоей машине с куками Chrome. Как сайты-качалки, но приватно.",
+    f7h: "Suno WAV / MP3", f7p: "Suno AI: прямая ссылка на трек — качаем WAV/MP3 как есть. og:audio парсится автоматически.",
+    demo_h: "Как это выглядит", demo_l: "Ссылка → «Скачать» → файл в загрузках.",
+    inst_h: "Установка за минуту", inst_l: "Без регистрации и сборки.",
+    s1h: "Скачай", s1p: "ZIP из", s1p2: "и распакуй.",
+    s2h: "Режим разработчика", s2p: "включи тумблер.",
+    s3h: "Загрузи", s3p: "«Загрузить распакованное» → папка videoloader.",
+    s4h: "Закрепи", s4p: "Иконку на панель — и качай. Firefox: about:debugging → временное дополнение.",
+    st1: "языки", st2: "автотесты", st3: "браузеры", st4: "open source",
+    faq_h: "Вопросы", faq_l: "Коротко о главном.",
+    q1: "Это точно расширение, а не программа?", a1: "Точно расширение: ставится в браузер за минуту, ничего не пишет в систему, удаляется в два клика на странице расширений.",
+    q2: "Почему иногда «цельный файл не найден»?", a2: "Сайт отдаёт только фрагменты потока без цельного файла. Расширение не подсовывает мусор — включи авто-сохранение или попробуй другой пост.",
+    q3: "Мои ссылки и куки куда-то уходят?", a3: "Нет. Всё работает локально в браузере; помощник крутится на 127.0.0.1. Исходники открыты — проверь сам.",
+    q4: "Что за помощник и зачем он?", a4: "Локальный yt-dlp с куками твоего Chrome — достаёт то, что не берётся из страницы. Без него расширение работает по встроенной цепочке.",
+    c1: "Установи расширение", c2: "и качай.", c3: "Минута установки — и любой рилс твой.",
+    dl2: "Скачать расширение", don: "поддержать"
+  },
+  en: {
+    n_feat: "Features", n_demo: "Demo", n_inst: "Install", n_faq: "FAQ", n_dl: "Download",
+    badge: "🧩 <b>Browser extension</b> · Chrome · Edge · Firefox · Opera",
+    h1a: "Download videos", h1b: "in one click",
+    os_pre: "For",
+    os_items: "Windows · macOS · Linux",
+    sub: "Free open-source browser extension. YouTube, TikTok, Instagram — paste a link, the rest is automatic. Windows and macOS.",
+    dl: "Download extension", code: "Sources",
+    feat_h: "Features", feat_l: "Everything for downloading — nothing extra.",
+    f1h: "One input", f1p: "Paste a video, post or reel link. The extension finds the whole file itself.",
+    f2h: "No junk", f2p: "Stream fragments and broken chunks are filtered out. No file — it says so.",
+    f3h: "Auto-save", f3p: "Watch a video — the file saves itself. Trivia is skipped.",
+    f4h: "6 languages", f4p: "Russian, English, Deutsch, 中文, қазақша, 한국어.",
+    f5h: "History", f5p: "Last 7 files: show in folder, delete from disk.",
+    f6h: "Local helper", f6p: "yt-dlp on your machine with your Chrome cookies. Like downloader sites, but private.",
+f7h: "Suno WAV / MP3", f7p: "Suno AI: direct track link — download WAV/MP3 as-is. og:audio parsed automatically.",
+    demo_h: "How it looks", demo_l: "Link → Download → file in your folder.",
+    inst_h: "1-minute install", inst_l: "No sign-up, no build.",
+    s1h: "Download", s1p: "ZIP from", s1p2: "and unpack it.",
+    s2h: "Developer mode", s2p: "toggle it on.",
+    s3h: "Load", s3p: "“Load unpacked” → the videoloader folder.",
+    s4h: "Pin it", s4p: "Pin the icon — and download. Firefox: about:debugging → temporary add-on.",
+    st1: "languages", st2: "auto tests", st3: "browsers", st4: "open source",
+    faq_h: "Questions", faq_l: "Briefly, the essentials.",
+    q1: "Is it really an extension, not a program?", a1: "Really an extension: installs in the browser in a minute, writes nothing to the system, removes in two clicks.",
+    q2: "Why “no whole file found” sometimes?", a2: "The site serves stream fragments only. The extension won't push junk — enable auto-save or try another post.",
+    q3: "Do my links and cookies go anywhere?", a3: "No. Everything runs locally in your browser; the helper spins on 127.0.0.1. Sources are open — check yourself.",
+    q4: "What is the helper and why?", a4: "Local yt-dlp with your Chrome cookies — grabs what the page won't give. Without it, the built-in chain still works.",
+    c1: "Install the extension", c2: "and download.", c3: "A minute to install — and any reel is yours.",
+    dl2: "Download extension", don: "support"
+  }
+};
 document.querySelectorAll(".lang button").forEach((b) => {
   b.addEventListener("click", () => {
     document.querySelectorAll(".lang button").forEach((x) => x.classList.toggle("on", x === b));
-    document.documentElement.lang = b.dataset.l;
-    document.getElementById("demogif").src = b.dataset.l === "en" ? "demo-en.gif" : "demo.gif";
-    if (b.dataset.l === "ru") { location.reload(); return; }
+    const lang = b.dataset.l;
+    document.documentElement.lang = lang;
+    document.getElementById("demogif").src = lang === "en" ? "demo-en.gif" : "demo.gif";
+    const dict = T[lang] || T.en;
     document.querySelectorAll("[data-i]").forEach((el) => {
-      const v = T.en[el.dataset.i];
+      const v = dict[el.dataset.i];
       if (v !== undefined) { if (el.tagName === "INPUT") el.placeholder = v; else el.innerHTML = v; }
     });
     // os_items handled separately
     const osItemsEl = document.querySelector('[data-i="os_items"]');
-    if (osItemsEl) osItemsEl.textContent = T.en.os_items || "Windows · macOS · Linux";
+    if (osItemsEl) osItemsEl.textContent = dict.os_items || "Windows · macOS · Linux";
   });
 });
 </script>

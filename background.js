@@ -8,6 +8,7 @@ const P = globalThis.VideoLoaderParser;
 /** tabId -> [{url,label,kind,title,size,at}] */
 const detected = new Map();
 const MAX_PER_TAB = 30;
+const MAX_GLOBAL_DETECTED = 500; // [SEC-FIX] Global limit to prevent memory leaks
 
 function remember(tabId, item) {
   if (tabId == null || tabId < 0) return;
@@ -18,6 +19,30 @@ function remember(tabId, item) {
   if (list.some((x) => x.url === item.url)) return;
   list.unshift({ ...item, at: Date.now() });
   detected.set(tabId, list.slice(0, MAX_PER_TAB));
+  
+  // [SEC-FIX] Global limit to prevent memory leaks
+  let total = 0;
+  for (const list of detected.values()) total += list.length;
+  if (total > MAX_GLOBAL_DETECTED) {
+    // Remove oldest entries across all tabs
+    const allEntries = [];
+    for (const [tid, list] of detected.entries()) {
+      for (const item of list) {
+        allEntries.push({ tabId: tid, item, at: item.at });
+      }
+    }
+    allEntries.sort((a, b) => a.at - b.at);
+    const toRemove = total - MAX_GLOBAL_DETECTED;
+    for (let i = 0; i < toRemove; i++) {
+      const entry = allEntries[i];
+      const list = detected.get(entry.tabId);
+      if (list) {
+        const idx = list.findIndex(x => x.url === entry.item.url);
+        if (idx >= 0) list.splice(idx, 1);
+        if (list.length === 0) detected.delete(entry.tabId);
+      }
+    }
+  }
 }
 
 function header(headers, name) {
@@ -63,10 +88,12 @@ chrome.webRequest.onResponseStarted.addListener(
 chrome.tabs.onRemoved.addListener((tabId) => {
   detected.delete(tabId);
   autoState.delete(tabId);
+  autoCaptureTimers.delete(tabId);
 });
 
 /* --- Авто-скачивание: само сохраняет цельный файл, когда видео пошло --- */
 const autoState = new Map(); // tabId -> {status, at, label}
+const autoCaptureTimers = new Map(); // tabId -> timerId
 const AUTO_MIN_INTERVAL = 60_000; // не чаще раза в минуту на вкладку
 
 async function autoPref() {
@@ -117,10 +144,24 @@ async function autoCapture(tabId) {
   }
   const best = items.find((x) => big.includes(x.url));
   if (best) {
-    await runOp("auto", "AUTO", async () => {
-      await doDownload(best.url, best.title || "");
-    }).catch(() => {});
-    autoState.set(tabId, { status: "done", at: Date.now(), label: "SAVED" });
+    // Set timer to clean up if download takes too long
+    const timerId = setTimeout(() => {
+      autoState.set(tabId, { status: "wait", at: Date.now(), label: "TIMEOUT" });
+      autoCaptureTimers.delete(tabId);
+    }, 5 * 60 * 1000); // 5 minute timeout
+    autoCaptureTimers.set(tabId, timerId);
+    
+    try {
+      await runOp("auto", "AUTO", async () => {
+        await doDownload(best.url, best.title || "");
+      });
+      autoState.set(tabId, { status: "done", at: Date.now(), label: "SAVED" });
+    } catch (e) {
+      autoState.set(tabId, { status: "wait", at: Date.now(), label: "ERROR" });
+    } finally {
+      clearTimeout(autoCaptureTimers.get(tabId));
+      autoCaptureTimers.delete(tabId);
+    }
   } else {
     autoState.set(tabId, { status: "wait", at: Date.now(), label: "WAIT" });
   }

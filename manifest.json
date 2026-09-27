@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "__MSG_appName__",
-  "version": "4.2.1",
+  "version": "4.2.2",
   "description": "__MSG_appDesc__",
   "default_locale": "en",
   "action": {
@@ -29,5 +29,8 @@
     }
   ],
   "permissions": ["downloads", "webRequest", "tabs", "storage", "scripting"],
-  "host_permissions": ["<all_urls>"]
+  "host_permissions": ["<all_urls>"],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; worker-src 'self'"
+  }
 }

@@ -9,22 +9,15 @@ const path = require("path");
 const PORT = parseInt(process.env.VL_PORT || "8765", 10);
 const DIR = __dirname;
 const OUT = path.join(DIR, "out");
-// [MACOS] Ищем yt-dlp везде: env -> рядом (win/mac) -> PATH (brew/pip).
-function resolveYtdlp() {
-  if (process.env.VL_YTDLP) {
-    try { if (fs.existsSync(process.env.VL_YTDLP)) return process.env.VL_YTDLP; } catch { /* дальше */ }
-  }
-  for (const n of ["yt-dlp.exe", "yt-dlp"]) {
-    try {
-      const p = path.join(DIR, "..", n);
-      if (fs.existsSync(p)) return p;
-    } catch { /* дальше */ }
-  }
-  return "yt-dlp"; // из PATH: macOS/Linux (brew/pip), Windows при установке в PATH
-}
+// [SEC-FIX] Helper authentication token (generated at startup)
+const HELPER_TOKEN = process.env.VL_HELPER_TOKEN || require("crypto").randomBytes(32).toString("hex");
 const YTDLP = resolveYtdlp();
 // [SEC-FIX SEC-07] Не больше двух yt-dlp одновременно (каждый живёт до 240с).
 const MAX_RUNNING = 2;
+// [SEC-FIX] Rate limiting for /download endpoint
+const DOWNLOAD_RATE_LIMIT = new Map(); // ip -> { count, resetTime }
+const DOWNLOAD_RATE_LIMIT_MAX = 10; // max requests per window
+const DOWNLOAD_RATE_WINDOW = 60 * 1000; // 1 minute window
 let running = 0;
 fs.mkdirSync(OUT, { recursive: true });
 
@@ -38,6 +31,44 @@ function extOriginOk(req) {
   const o = req.headers.origin || "";
   if (!o) return true; // curl / без origin — локальные вызовы
   return /^chrome-extension:\/\/[a-z]+$/i.test(o);
+}
+
+function checkAuth(req) {
+  const auth = req.headers.authorization || "";
+  return auth === `Bearer ${HELPER_TOKEN}`;
+}
+
+function checkRateLimit(ip) {
+  const now = Date.now();
+  const entry = DOWNLOAD_RATE_LIMIT.get(ip);
+  if (!entry || now > entry.resetTime) {
+    DOWNLOAD_RATE_LIMIT.set(ip, { count: 1, resetTime: now + DOWNLOAD_RATE_WINDOW });
+    return true;
+  }
+  if (entry.count >= DOWNLOAD_RATE_LIMIT_MAX) {
+    return false;
+  }
+  entry.count++;
+  return true;
+}
+
+function checkAuth(req) {
+  const auth = req.headers.authorization || "";
+  return auth === `Bearer ${HELPER_TOKEN}`;
+}
+
+function checkRateLimit(ip) {
+  const now = Date.now();
+  const entry = DOWNLOAD_RATE_LIMIT.get(ip);
+  if (!entry || now > entry.resetTime) {
+    DOWNLOAD_RATE_LIMIT.set(ip, { count: 1, resetTime: now + DOWNLOAD_RATE_WINDOW });
+    return true;
+  }
+  if (entry.count >= DOWNLOAD_RATE_LIMIT_MAX) {
+    return false;
+  }
+  entry.count++;
+  return true;
 }
 
 // [RABBIT] Файлы, которые сейчас раздаём в /file/: чистка их не трогает.
@@ -148,6 +179,15 @@ const server = http.createServer((req, res) => {
     return;
   }
   if (req.method === "POST" && u.pathname === "/download") {
+    // [SEC-FIX] Check authentication
+    if (!checkAuth(req)) return send(res, 401, { ok: false, error: "unauthorized" });
+
+    // [SEC-FIX] Rate limiting
+    const ip = req.socket.remoteAddress || "unknown";
+    if (!checkRateLimit(req.socket.remoteAddress)) {
+      return send(res, 429, { ok: false, error: "rate limit exceeded" });
+    }
+
     let body = "";
     req.on("data", (d) => { body += d; if (body.length > 4096) req.destroy(); });
     req.on("end", async () => {
@@ -163,6 +203,55 @@ const server = http.createServer((req, res) => {
     return;
   }
   res.writeHead(404); res.end();
+});
+
+server.listen(PORT, "127.0.0.1", () => {
+  console.log(`VideoLoader helper on http://127.0.0.1:${PORT} (out: ${OUT})`);
+});
+
+// Graceful shutdown
+let shuttingDown = false;
+async function gracefulShutdown(signal) {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  console.log(`Received ${signal}, shutting down gracefully...`);
+  
+  // Stop accepting new connections
+  server.close(() => {
+    console.log("HTTP server closed");
+  });
+  
+  // Wait for running downloads to complete (with timeout)
+  const shutdownTimeout = setTimeout(() => {
+    console.log("Shutdown timeout, forcing exit");
+    process.exit(1);
+  }, 30000);
+  
+  const checkRunning = () => {
+    if (running === 0) {
+      clearTimeout(shutdownTimeout);
+      console.log("All downloads completed, exiting");
+      process.exit(0);
+    } else {
+      setTimeout(checkRunning, 1000);
+    }
+  };
+  checkRunning();
+}
+
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+process.on("SIGINT", () => gracefulShutdown("SIGINT"));
+process.on("SIGHUP", () => gracefulShutdown("SIGHUP"));
+
+// Handle uncaught exceptions
+process.on("uncaughtException", (err) => {
+  console.error("Uncaught exception:", err);
+  gracefulShutdown("uncaughtException");
+});
+
+process.on("unhandledRejection", (reason) => {
+  console.error("Unhandled rejection:", reason);
+  gracefulShutdown("unhandledRejection");
 });
 
 server.listen(PORT, "127.0.0.1", () => {

@@ -1,12 +1,49 @@
-// WebGL Shader Gradient Background (shadergradient-inspired)
-// This file contains the WebGL shader gradient background for the landing page
-
 (function() {
   const canvas = document.getElementById('gradient-canvas');
   if (!canvas) return;
+
+  // Ensure canvas is properly sized before WebGL init
+  function resize() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = window.innerWidth * (window.devicePixelRatio || 1);
+    canvas.height = window.innerHeight * (window.devicePixelRatio || 1);
+    canvas.style.width = window.innerWidth + 'px';
+    canvas.style.height = window.innerHeight + 'px';
+  }
+
+  // Initialize canvas size immediately
+  resize();
+  window.addEventListener('resize', resize);
+
+  // Try WebGL2 first, fallback to WebGL1
+  let gl = canvas.getContext('webgl2', { 
+    alpha: true, 
+    premultipliedAlpha: false, 
+    preserveDrawingBuffer: false, 
+    failIfMajorPerformanceCaveat: false 
+  });
   
-  const gl = canvas.getContext('webgl2', { alpha: true, premultipliedAlpha: false, preserveDrawingBuffer: false });
-  if (!gl) return;
+  if (!gl) {
+    console.warn('WebGL2 not available, falling back to WebGL1');
+    const gl1 = canvas.getContext('webgl', { 
+      alpha: true, 
+      premultipliedAlpha: false, 
+      preserveDrawingBuffer: false 
+    });
+    if (!gl1) {
+      console.warn('WebGL not supported, gradient background disabled');
+      return;
+    }
+    // WebGL1 context works, but our shaders are GLSL 300 ES (WebGL2)
+    // For simplicity, we'll just disable the gradient if WebGL2 is not available
+    console.warn('WebGL2 required for gradient shader, falling back to CSS gradient');
+    // Fallback to CSS gradient
+    const canvasEl = document.getElementById('gradient-canvas');
+    if (canvasEl) {
+      canvasEl.style.background = 'linear-gradient(135deg, #0a0a12 0%, #1a1a3e 50%, #0d0d1f 100%)';
+    }
+    return;
+  }
   
   // Vertex shader
   const vsSource = `#version 300 es
@@ -211,6 +248,54 @@
     requestAnimationFrame(render);
   }
   
+  // Colors matching the site's theme
+  const colors = {
+    color1: [10/255, 132/255, 255/255],    // #0a84ff - blue
+    color2: [94/255, 92/255, 230/255],     // #5e5ce6 - purple
+    color3: [48/255, 209/255, 88/255],     // #30d158 - green
+  };
+
+  // Resize handler
+  function resize() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = window.innerWidth * (window.devicePixelRatio || 1);
+    canvas.height = window.innerHeight * (window.devicePixelRatio || 1);
+    canvas.style.width = window.innerWidth + 'px';
+    canvas.style.height = window.innerHeight + 'px';
+    gl.viewport(0, 0, canvas.width, canvas.height);
+  }
+
+  let startTime = performance.now();
+  function render(time) {
+    if (!gl) return;
+    const currentTime = (time - startTime) * 0.001;
+
+    gl.useProgram(program);
+    gl.bindVertexArray(vao);
+    gl.viewport(0, 0, canvas.width, canvas.height);
+
+    gl.uniform1f(uniforms.time, currentTime);
+    gl.uniform2f(uniforms.resolution, canvas.width, canvas.height);
+    gl.uniform3fv(uniforms.color1, colors.color1);
+    gl.uniform3fv(uniforms.color2, colors.color2);
+    gl.uniform3fv(uniforms.color3, colors.color3);
+
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+    requestAnimationFrame(render);
+  }
+
+  function fallbackToCSSGradient() {
+    console.warn('WebGL gradient failed, falling back to CSS gradient');
+    const canvasEl = document.getElementById('gradient-canvas');
+    if (canvasEl) {
+      canvasEl.style.background = 'linear-gradient(135deg, #0a0a12 0%, #1a1a3e 50%, #0d0d1f 100%)';
+    }
+    if (gl) {
+      try { gl.getExtension('WEBGL_lose_context')?.loseContext(); } catch {}
+    }
+  }
+
   // Initialize
   resize();
   window.addEventListener('resize', resize);

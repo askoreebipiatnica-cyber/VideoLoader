@@ -41,6 +41,7 @@ nav.scrolled { background: rgba(10,10,18,.8); backdrop-filter: blur(18px); -webk
 /* HERO */
 .hero { position: relative; text-align: center; padding: 150px 20px 40px; overflow: hidden; }
 .hero::before { content: ""; position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px); background-size: 56px 56px; mask-image: radial-gradient(ellipse 70% 60% at 50% 30%, #000 30%, transparent 75%); pointer-events: none; }
+.gradient-bg { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
 .orb { position: absolute; border-radius: 50%; filter: blur(90px); opacity: .35; pointer-events: none; animation: float 9s ease-in-out infinite; }
 .orb.a { width: 420px; height: 420px; left: 8%; top: -120px; background: #0a84ff; }
 .orb.b { width: 340px; height: 340px; right: 6%; top: 40px; background: #5e5ce6; animation-delay: -4s; }
